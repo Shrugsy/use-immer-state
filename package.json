@@ -1,16 +1,24 @@
 {
-  "name": "useimmerstate",
-  "version": "0.0.1",
+  "name": "@shrugsy/use-immer-state",
+  "version": "0.0.2",
   "description": "Use immutable state. Super-charged use-state with immer capabilities.",
   "main": "dist/index.js",
   "source": "src/index.ts",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/*"
+  ],
   "scripts": {
     "build": "rimraf dist/* && microbundle && rimraf dist/*mjs* dist/*umd* dist/*test*",
     "dev": "microbundle watch",
     "test": "jest",
     "test-watch": "jest --watch"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shrugsy/use-immer-state.git"
+  },
+  "homepage": "https://github.com/Shrugsy/use-immer-state#readme",
   "keywords": [
     "react",
     "hook",
