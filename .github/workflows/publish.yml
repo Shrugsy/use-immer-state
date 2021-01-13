@@ -1,0 +1,33 @@
+name: "🚀 publish"
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    name: 🚀 publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📘 checkout
+        uses: actions/checkout@v2.1.1
+      - name: 🟢 node
+        uses: actions/setup-node@v1.4.2
+        with:
+          node-version: 12
+          registry-url: https://registry.npmjs.org
+      - name: ⚠️ test
+        run: npm run test
+      - name: 📰 coverage
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: 🏠 build
+        run: npm run build
+      - name: 🚀 publish
+        run: npm publish --access public
+        working-directory: use-immer-state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
