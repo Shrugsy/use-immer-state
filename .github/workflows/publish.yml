@@ -10,22 +10,23 @@ jobs:
     name: 🚀 publish
     runs-on: ubuntu-latest
     steps:
-      - name: 📘 checkout files
+      - name: 📘 Checkout files
         uses: actions/checkout@v2.1.1
       - name: 🟢 Setup Node.js environment
         uses: actions/setup-node@v2.1.4
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org
-      - name: ⚠️ test
+      - name: 📦 Install packages
+      - name: ⚠️ Run tests
         run: npm run test
-      - name: 📰 coverage
+      - name: 📰 Upload coverage
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: 🏠 build
+      - name: 🏠 Build files
         run: npm run build
-      - name: 🚀 publish
+      - name: 🚀 Publish to npm
         run: npm publish --access public
         working-directory: use-immer-state
         env:
