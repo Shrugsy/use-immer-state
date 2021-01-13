@@ -18,6 +18,7 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org
       - name: 📦 Install packages
+        run: npm run install
       - name: ⚠️ Run tests
         run: npm run test
       - name: 📰 Upload coverage
