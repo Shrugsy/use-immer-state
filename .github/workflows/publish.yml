@@ -10,10 +10,10 @@ jobs:
     name: 🚀 publish
     runs-on: ubuntu-latest
     steps:
-      - name: 📘 checkout
+      - name: 📘 checkout files
         uses: actions/checkout@v2.1.1
-      - name: 🟢 node
-        uses: actions/setup-node@v1.4.2
+      - name: 🟢 Setup Node.js environment
+        uses: actions/setup-node@v2.1.4
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org
