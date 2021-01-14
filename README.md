@@ -6,12 +6,12 @@
 
 A React hook that provides a supercharged version of the `useState` hook. Allows for writing easy immutable updates. Heavily inspired by [@reduxjs/redux-toolkit](https://github.com/reduxjs/redux-toolkit)'s usage of `immer`.
 
-_codesandbox demo TODO:_
+[codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-state-example-tjptk?file=/src/App.tsx)
 
 ## Installation
 
 ```
-npm i useimmerstate
+npm i @shrugsy/use-immer-state
 ```
 
 ## Features

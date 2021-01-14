@@ -101,6 +101,8 @@ function useImmerState<S>(initialState: S | (() => S)) {
 
   const setState = React.useCallback(
     (updates: S | ((draftState: S) => S | void | undefined)) => {
+      // manually invoke this action since the action is created within the hook
+      // (to help with typing)
       dispatchAction({
         type: "state/setState",
         payload: updates,
@@ -116,6 +118,10 @@ function useImmerState<S>(initialState: S | (() => S)) {
     [dispatchAction]
   );
 
+  const reset = React.useCallback(() => {
+    dispatchAction(goToAction(0));
+  }, [dispatchAction]);
+
   const saveCheckpoint = React.useCallback(() => {
     dispatchAction(saveCheckpointAction());
   }, [dispatchAction]);
@@ -130,6 +136,7 @@ function useImmerState<S>(initialState: S | (() => S)) {
     goTo,
     saveCheckpoint,
     restoreCheckpoint,
+    reset,
   };
 
   return [state.history[state.stepNum], setState, extraApi] as const;

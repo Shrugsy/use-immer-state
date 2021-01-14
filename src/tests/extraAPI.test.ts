@@ -1,136 +1,7 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import useImmerState from "./";
-import { MutationError } from "./utils";
+import useImmerState from "../";
 
-describe("useImmerState", () => {
-  test("can set state normally", () => {
-    const { result } = renderHook(() => useImmerState("initial"));
-
-    // first render
-    let [state, setState] = result.current;
-
-    expect(state).toEqual("initial");
-
-    /* standard update */
-    act(() => setState("foo"));
-    expect(state).toEqual("initial"); // should be unchanged
-
-    // second render
-    [state, setState] = result.current;
-    expect(state).toEqual("foo"); // should be updated state
-
-    /* functional update */
-    act(() => setState((prev) => `${prev}bar`));
-    expect(state).toEqual("foo"); // should be unchanged
-
-    // third render
-    [state, setState] = result.current;
-    expect(state).toEqual("foobar");
-  });
-
-  test("can set state immutably with functional updates", () => {
-    const initialState = [
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-    ];
-
-    const { result } = renderHook(() => useImmerState(initialState));
-
-    // first render
-    let [state, setState] = result.current;
-    const stateAtFirstRender = state;
-
-    /* manual immutable update */
-    act(() => setState([...initialState, { id: 2, value: "faz" }]));
-    expect(state).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-    ]); // should be unchanged
-
-    // second render
-    [state, setState] = result.current;
-    const stateAtSecondRender = state;
-    expect(state).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-      { id: 2, value: "faz" },
-    ]); // should be unchanged
-
-    /* functional update applied immutably with immer */
-    act(() => {
-      setState((prev) => {
-        prev[1].value = "newBar";
-      });
-    });
-    expect(state).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-      { id: 2, value: "faz" },
-    ]); // should be unchanged
-
-    // third render
-    [state, setState] = result.current;
-    const stateAtThirdRender = state;
-    expect(state).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "newBar" },
-      { id: 2, value: "faz" },
-    ]);
-
-    // final assertions
-    expect(stateAtFirstRender).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-    ]);
-    expect(stateAtSecondRender).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-      { id: 2, value: "faz" },
-    ]);
-    expect(stateAtThirdRender).toEqual([
-      { id: 0, value: "foo" },
-      { id: 1, value: "newBar" },
-      { id: 2, value: "faz" },
-    ]);
-
-    // whole history should line up
-    const [, , { history }] = result.current;
-    expect(history).toEqual([
-      [
-        { id: 0, value: "foo" },
-        { id: 1, value: "bar" },
-      ],
-      [
-        { id: 0, value: "foo" },
-        { id: 1, value: "bar" },
-        { id: 2, value: "faz" },
-      ],
-      [
-        { id: 0, value: "foo" },
-        { id: 1, value: "newBar" },
-        { id: 2, value: "faz" },
-      ],
-    ]);
-  });
-
-  test("logs and throws if mutations are detected", () => {
-    const initialState = [
-      { id: 0, value: "foo" },
-      { id: 1, value: "bar" },
-    ];
-
-    const { rerender } = renderHook(() => useImmerState(initialState));
-
-    // first render
-    initialState[0].value = "mutatedFoo";
-
-    // silence the expected errors
-    const mock = jest.spyOn(console, "error");
-    mock.mockImplementation(() => null);
-    expect(rerender).toThrow(MutationError);
-    mock.mockRestore();
-  });
-
+describe("extra API", () => {
   test("shows history, step, and can goto a point in history", () => {
     const initialState = [
       { id: 0, value: "foo" },
@@ -364,7 +235,7 @@ describe("useImmerState", () => {
     ]);
   });
 
-  test("can save a checkpoint", () => {
+  test("can save and restore from a checkpoint", () => {
     const initialState = [
       { id: 0, value: "foo" },
       { id: 1, value: "bar" },
@@ -519,6 +390,129 @@ describe("useImmerState", () => {
       [
         { id: 0, value: "clearedFoo" },
         { id: 1, value: "clearedBar" },
+      ],
+    ]);
+  });
+
+  test("can reset to original state", () => {
+    const initialState = [
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ];
+
+    const { result } = renderHook(() => useImmerState(initialState));
+
+    // first render
+    let [state, setState, { history, stepNum, reset }] = result.current;
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+
+    // history should just have initial state
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+    ]);
+    act(() => {
+      setState((prev) => {
+        prev[1].value = "newBar";
+      });
+    });
+    [state, setState, { history, stepNum, reset }] = result.current;
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "newBar" },
+    ]);
+
+    // history should be extended
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+    act(() => {
+      setState((prev) => {
+        prev[0].value = "newFoo";
+      });
+    });
+    [state, setState, { history, stepNum, reset }] = result.current;
+    expect(stepNum).toEqual(2);
+    expect(state).toEqual([
+      { id: 0, value: "newFoo" },
+      { id: 1, value: "newBar" },
+    ]);
+
+    // history should be extended
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+    act(() => {
+      reset();
+    });
+    [state, setState, { history, stepNum, reset }] = result.current;
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+
+    // history should be extended
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+    act(() => {
+      setState((prev) => {
+        prev[0].value = "re-wrote the timeline";
+      });
+    });
+    [state, , { history, stepNum }] = result.current;
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "re-wrote the timeline" },
+      { id: 1, value: "bar" },
+    ]);
+
+    // history should be extended
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "re-wrote the timeline" },
+        { id: 1, value: "bar" },
       ],
     ]);
   });
