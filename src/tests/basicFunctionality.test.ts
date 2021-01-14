@@ -27,6 +27,31 @@ describe("basic functionality", () => {
     expect(state).toEqual("foobar");
   });
 
+  test("can accept a lazy initializer for initial state", () => {
+    const { result } = renderHook(() => useImmerState(() => "initial"));
+
+    // first render
+    let [state, setState] = result.current;
+
+    expect(state).toEqual("initial");
+
+    /* standard update */
+    act(() => setState("foo"));
+    expect(state).toEqual("initial"); // should be unchanged
+
+    // second render
+    [state, setState] = result.current;
+    expect(state).toEqual("foo"); // should be updated state
+
+    /* functional update */
+    act(() => setState((prev) => `${prev}bar`));
+    expect(state).toEqual("foo"); // should be unchanged
+
+    // third render
+    [state, setState] = result.current;
+    expect(state).toEqual("foobar");
+  });
+
   test("can set state immutably with functional updates", () => {
     const initialState = [
       { id: 0, value: "foo" },

@@ -24,7 +24,7 @@ type ReducerState<S> = {
  * @param initialState - initial state, or lazy function to return initial state
  */
 function useImmerState<S>(initialState: S | (() => S)) {
-  const isFirstRenderRef = React.useRef(false);
+  const isFirstRenderRef = React.useRef(true);
 
   let initialStatePiece = initialState;
   if (isFirstRenderRef.current) {
@@ -35,6 +35,7 @@ function useImmerState<S>(initialState: S | (() => S)) {
       initialStatePiece = initialState;
     }
   }
+  isFirstRenderRef.current = false;
 
   const initialReducerState: ReducerState<S> = {
     history: [initialStatePiece] as S[],
