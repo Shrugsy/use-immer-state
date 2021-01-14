@@ -6,11 +6,13 @@ import { createAction, createReducer } from "@reduxjs/toolkit";
 const goToAction = createAction<number>("state/goTo");
 const saveCheckpointAction = createAction("state/saveCheckpoint");
 const restoreCheckpointAction = createAction("state/restoreCheckpoint");
+const resetAction = createAction("state/reset");
 
 type ReducerState<S> = {
   history: S[];
   stepNum: number;
   checkpoint: number;
+  isCheckpointValid: boolean;
 };
 
 /**
@@ -38,6 +40,7 @@ function useImmerState<S>(initialState: S | (() => S)) {
     history: [initialStatePiece] as S[],
     stepNum: 0,
     checkpoint: 0,
+    isCheckpointValid: true,
   };
 
   const setStateAction = createAction<
@@ -68,6 +71,12 @@ function useImmerState<S>(initialState: S | (() => S)) {
           const draftUpdates = action.payload as Draft<S>;
           draftState.history.push(draftUpdates);
         }
+
+        // checkpoint needs to have been one of the existing items,
+        // excluding the new one
+        if (draftState.checkpoint >= draftState.history.length - 1) {
+          draftState.isCheckpointValid = false;
+        }
       })
       .addCase(goToAction, (draftState, action) => {
         const step = action.payload;
@@ -76,13 +85,23 @@ function useImmerState<S>(initialState: S | (() => S)) {
         }
       })
       .addCase(saveCheckpointAction, (draftState) => {
+        draftState.isCheckpointValid = true;
         draftState.checkpoint = draftState.stepNum;
       })
       .addCase(restoreCheckpointAction, (draftState) => {
-        const { checkpoint } = draftState;
+        const { checkpoint, isCheckpointValid } = draftState;
+        if (!isCheckpointValid) {
+          console.error(
+            `Unable to restore checkpoint: saved checkpoint at index ${checkpoint} no longer exists!`
+          );
+          return;
+        }
         if (isStepValid(checkpoint, draftState.history.length)) {
           draftState.stepNum = checkpoint;
         }
+      })
+      .addCase(resetAction, () => {
+        return initialReducerState;
       });
   });
 
@@ -119,7 +138,7 @@ function useImmerState<S>(initialState: S | (() => S)) {
   );
 
   const reset = React.useCallback(() => {
-    dispatchAction(goToAction(0));
+    dispatchAction(resetAction());
   }, [dispatchAction]);
 
   const saveCheckpoint = React.useCallback(() => {

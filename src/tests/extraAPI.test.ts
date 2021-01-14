@@ -394,6 +394,164 @@ describe("extra API", () => {
     ]);
   });
 
+  test("Does not permit restoring a checkpoint if it no longer exists", () => {
+    const initialState = [
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ];
+
+    const { result } = renderHook(() => useImmerState(initialState));
+
+    // first render
+    let [
+      state,
+      setState,
+      { history, stepNum, saveCheckpoint, restoreCheckpoint, goTo },
+    ] = result.current;
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+    ]);
+
+    act(() => {
+      setState((prev) => {
+        prev[1].value = "newBar";
+      });
+    });
+
+    // second render
+    [
+      state,
+      setState,
+      { history, stepNum, saveCheckpoint, restoreCheckpoint, goTo },
+    ] = result.current;
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "newBar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    act(() => {
+      // save at index 1
+      saveCheckpoint();
+    });
+    act(() => {
+      // go to index 0
+      goTo(0);
+    });
+
+    // third render
+    [
+      state,
+      setState,
+      { history, stepNum, saveCheckpoint, restoreCheckpoint },
+    ] = result.current;
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    act(() => {
+      // set state again (twice!), which overwrites history from index 1,
+      // making our saved checkpoint at index 1 invalid
+      setState((prev) => {
+        prev[0].value = "re-wrote the timeline";
+      });
+      setState((prev) => {
+        prev[0].value = "re-wrote the timeline again";
+      });
+    });
+
+    // fourth render
+    [
+      state,
+      setState,
+      { history, stepNum, saveCheckpoint, restoreCheckpoint },
+    ] = result.current;
+    expect(stepNum).toEqual(2);
+    expect(state).toEqual([
+      { id: 0, value: "re-wrote the timeline again" },
+      { id: 1, value: "bar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "re-wrote the timeline" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "re-wrote the timeline again" },
+        { id: 1, value: "bar" },
+      ],
+    ]);
+
+    // silence the expected console error for the tests
+    const mock = jest.spyOn(console, "error");
+    mock.mockImplementation(() => null);
+    act(() => {
+      // this should intentionally not work since the checkpoint is now gone from the history
+      restoreCheckpoint();
+    });
+    mock.mockRestore();
+
+    // fifth render
+    [
+      state,
+      setState,
+      { history, stepNum, saveCheckpoint, restoreCheckpoint },
+    ] = result.current;
+    expect(stepNum).toEqual(2);
+    expect(state).toEqual([
+      { id: 0, value: "re-wrote the timeline again" },
+      { id: 1, value: "bar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "re-wrote the timeline" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "re-wrote the timeline again" },
+        { id: 1, value: "bar" },
+      ],
+    ]);
+  });
+
   test("can reset to original state", () => {
     const initialState = [
       { id: 0, value: "foo" },
@@ -477,19 +635,11 @@ describe("extra API", () => {
       { id: 1, value: "bar" },
     ]);
 
-    // history should be extended
+    // history should be reset to initial state
     expect(history).toEqual([
       [
         { id: 0, value: "foo" },
         { id: 1, value: "bar" },
-      ],
-      [
-        { id: 0, value: "foo" },
-        { id: 1, value: "newBar" },
-      ],
-      [
-        { id: 0, value: "newFoo" },
-        { id: 1, value: "newBar" },
       ],
     ]);
     act(() => {
