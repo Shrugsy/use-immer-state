@@ -1,6 +1,17 @@
-import produce from "immer";
 import * as React from "react";
-import { useTrackMutations } from "./utils";
+import produce, { Draft } from "immer";
+import { useTrackMutations, isStepValid } from "./utils";
+import { createAction, createReducer } from "@reduxjs/toolkit";
+
+const goToAction = createAction<number>("state/goTo");
+const saveCheckpointAction = createAction("state/saveCheckpoint");
+const restoreCheckpointAction = createAction("state/restoreCheckpoint");
+
+type ReducerState<S> = {
+  history: S[];
+  stepNum: number;
+  checkpoint: number;
+};
 
 /**
  * Hook similar to useState, but uses immer internally to ensure immutable updates.
@@ -11,110 +22,117 @@ import { useTrackMutations } from "./utils";
  * @param initialState - initial state, or lazy function to return initial state
  */
 function useImmerState<S>(initialState: S | (() => S)) {
-  let initialStateHistory: S[] | (() => S[]);
-  if (typeof initialState === "function") {
-    const passedInitialState = initialState as () => S;
-    initialStateHistory = () => [passedInitialState()];
-  } else {
-    initialStateHistory = [initialState];
+  const isFirstRenderRef = React.useRef(false);
+
+  let initialStatePiece = initialState;
+  if (isFirstRenderRef.current) {
+    if (typeof initialState === "function") {
+      const lazyInitialState = initialState as () => S;
+      initialStatePiece = lazyInitialState();
+    } else {
+      initialStatePiece = initialState;
+    }
   }
-  const [stateHistory, setStateHistory] = React.useState<S[]>(
-    initialStateHistory
+
+  const initialReducerState: ReducerState<S> = {
+    history: [initialStatePiece] as S[],
+    stepNum: 0,
+    checkpoint: 0,
+  };
+
+  const setStateAction = createAction<
+    S | ((draftState: S) => S | void | undefined)
+  >("state/setState");
+
+  const reducer = createReducer(initialReducerState, (builder) => {
+    builder
+      .addCase(setStateAction, (draftState, action) => {
+        if (typeof action.payload === "function") {
+          const updater = action.payload as (
+            draftState: S
+          ) => S | void | undefined;
+          // chop off any 'future' history if applicable
+          draftState.history.splice(draftState.stepNum + 1);
+
+          // get new state piece
+          const nextStatePiece = produce(
+            draftState.history[draftState.stepNum],
+            updater
+          ) as Draft<S>;
+          draftState.stepNum++;
+          draftState.history.push(nextStatePiece);
+        } else {
+          draftState.history.splice(draftState.stepNum + 1);
+          draftState.stepNum++;
+
+          const draftUpdates = action.payload as Draft<S>;
+          draftState.history.push(draftUpdates);
+        }
+      })
+      .addCase(goToAction, (draftState, action) => {
+        const step = action.payload;
+        if (isStepValid(step, draftState.history.length)) {
+          draftState.stepNum = step;
+        }
+      })
+      .addCase(saveCheckpointAction, (draftState) => {
+        draftState.checkpoint = draftState.stepNum;
+      })
+      .addCase(restoreCheckpointAction, (draftState) => {
+        const { checkpoint } = draftState;
+        if (isStepValid(checkpoint, draftState.history.length)) {
+          draftState.stepNum = checkpoint;
+        }
+      });
+  });
+
+  const [state, dispatchAction] = React.useReducer(
+    reducer,
+    initialReducerState
   );
-  const stateHistoryRef = React.useRef(stateHistory);
-  stateHistoryRef.current = stateHistory;
-
-  const [stepNum, setStepNum] = React.useState(0);
-  const stepNumRef = React.useRef(stepNum);
-  stepNumRef.current = stepNum;
-
-  const [checkpoint, setCheckpoint] = React.useState(0);
 
   if (process.env.NODE_ENV !== "production") {
     // Yes we broke the rule, but kept the spirit.
     // The number of hooks won't change between renders,
     // because the environment won't change between renders.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useTrackMutations(stateHistory);
+    useTrackMutations(state.history);
   }
 
-  const setStateWithImmer = React.useCallback(
-    (updates: S | ((draftState: S) => void)) => {
-      if (typeof updates === "function") {
-        const draftUpdater = updates as (draftState: S) => void;
-        setStateHistory((prevStateHistory) => {
-          // chop any 'future' history that is no longer applicable
-
-          let newStateHistory = chopPastIndex(
-            prevStateHistory,
-            stepNumRef.current
-          );
-
-          // create the new history step based on the provided draft updater
-          const newStateItem = produce(
-            newStateHistory[stepNumRef.current],
-            draftUpdater
-          );
-          // add it as our new final step
-          newStateHistory = [...newStateHistory, newStateItem];
-
-          setStepNum(newStateHistory.length - 1);
-          return newStateHistory;
-        });
-      } else {
-        // chop any 'future' history that is no longer applicable
-        const nextStateHistory = chopPastIndex(
-          stateHistoryRef.current,
-          stepNumRef.current
-        );
-        setStepNum(nextStateHistory.length);
-        setStateHistory([...nextStateHistory, updates]);
-      }
+  const setState = React.useCallback(
+    (updates: S | ((draftState: S) => S | void | undefined)) => {
+      dispatchAction({
+        type: "state/setState",
+        payload: updates,
+      });
     },
-    []
+    [dispatchAction]
   );
 
-  const goTo = React.useCallback((step: number) => {
-    if (typeof step !== "number") {
-      console.error(
-        `Please only pass a number to this function! Received ${step}`
-      );
-      return;
-    }
-    if (step < 0) {
-      console.error(`Step number ${step} below bounds!`);
-      return;
-    }
-    if (step > stateHistoryRef.current.length) {
-      console.error(
-        `Step number ${step} above bounds! History length is ${stateHistoryRef.current.length}`
-      );
-      return;
-    }
-    setStepNum(step);
-  }, []);
+  const goTo = React.useCallback(
+    (step: number) => {
+      dispatchAction(goToAction(step));
+    },
+    [dispatchAction]
+  );
 
   const saveCheckpoint = React.useCallback(() => {
-    setCheckpoint(stepNum);
-  }, [stepNum]);
+    dispatchAction(saveCheckpointAction());
+  }, [dispatchAction]);
 
   const restoreCheckpoint = React.useCallback(() => {
-    goTo(checkpoint);
-  }, [goTo, checkpoint]);
+    dispatchAction(restoreCheckpointAction());
+  }, [dispatchAction]);
 
   const extraApi = {
-    history: stateHistory,
-    stepNum,
+    history: state.history,
+    stepNum: state.stepNum,
     goTo,
     saveCheckpoint,
     restoreCheckpoint,
   };
 
-  return [stateHistory[stepNum], setStateWithImmer, extraApi] as const;
+  return [state.history[state.stepNum], setState, extraApi] as const;
 }
 
 export default useImmerState;
-
-function chopPastIndex<T>(arr: T[], index: number): T[] {
-  return arr.slice(0, index + 1);
-}

@@ -12,7 +12,7 @@ function getPartColor(part: Diff.Change) {
 
 function logDiffs(partArray: Diff.Change[]) {
   let diffStr = "";
-  let cssArray = [] as string[];
+  const cssArray = [] as string[];
   partArray.forEach((part) => {
     const color = getPartColor(part);
     diffStr += `%c${part.value}`;
@@ -58,4 +58,24 @@ export function useTrackMutations<S>(state: S) {
     prevStateStringified.current = JSON.stringify(state);
     prevStateRaw.current = state;
   });
+}
+
+export function isStepValid(step: number, historyLength: number): boolean {
+  if (typeof step !== "number") {
+    console.error(
+      `Please only pass a number to this function! Received ${step}`
+    );
+    return false;
+  }
+  if (step < 0) {
+    console.error(`Step number ${step} below bounds!`);
+    return false;
+  }
+  if (step > historyLength) {
+    console.error(
+      `Step number ${step} above bounds! History length is ${historyLength}`
+    );
+    return false;
+  }
+  return true;
 }
