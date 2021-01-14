@@ -44,7 +44,7 @@ function useImmerState<S>(initialState: S | (() => S)) {
   };
 
   const setStateAction = createAction<
-    S | ((draftState: S) => S | void | undefined)
+    S | ((draftState: Draft<S>) => Draft<S> | void | undefined)
   >("state/setState");
 
   const reducer = createReducer(initialReducerState, (builder) => {
@@ -52,8 +52,8 @@ function useImmerState<S>(initialState: S | (() => S)) {
       .addCase(setStateAction, (draftState, action) => {
         if (typeof action.payload === "function") {
           const updater = action.payload as (
-            draftState: S
-          ) => S | void | undefined;
+            draftState: Draft<S>
+          ) => Draft<S> | void | undefined;
           // chop off any 'future' history if applicable
           draftState.history.splice(draftState.stepNum + 1);
 
@@ -119,7 +119,7 @@ function useImmerState<S>(initialState: S | (() => S)) {
   }
 
   const setState = React.useCallback(
-    (updates: S | ((draftState: S) => S | void | undefined)) => {
+    (updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)) => {
       // manually invoke this action since the action is created within the hook
       // (to help with typing)
       dispatchAction({
