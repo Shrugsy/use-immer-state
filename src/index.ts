@@ -25,7 +25,7 @@ type ReducerState<S> = {
  * throw an error if detected.
  * @param initialState - initial state, or lazy function to return initial state
  */
-function useImmerState<S>(initialState: S | (() => S)) {
+export function useImmerState<S>(initialState: S | (() => S)) {
   const initialStateRef = React.useRef(initialState);
   const isFirstRenderRef = React.useRef(true);
 
@@ -182,5 +182,3 @@ function useImmerState<S>(initialState: S | (() => S)) {
 
   return [state.history[state.stepNum], setState, extraApi] as const;
 }
-
-export default useImmerState;

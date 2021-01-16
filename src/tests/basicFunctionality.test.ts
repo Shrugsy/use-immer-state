@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import useImmerState from "../";
+import { useImmerState } from "../";
 
 describe("basic functionality", () => {
   test("can set state normally", () => {

@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import useImmerState from "../";
+import { useImmerState } from "../";
 
 describe("extra API", () => {
   test("shows history, step, and can goto a point in history", () => {

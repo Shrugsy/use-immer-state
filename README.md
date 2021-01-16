@@ -21,6 +21,12 @@ A React hook that provides a supercharged version of the `useState` hook. Allows
 npm i @shrugsy/use-immer-state
 ```
 
+Within your React app:
+
+```ts
+import { useImmerState } from "@shrugsy/use-immer-state";
+```
+
 **[⬆ back to top](#table-of-contents)**
 
 ## Features
@@ -47,6 +53,8 @@ At it's core, it can be used identically to the inbuilt `useState` hook.
 e.g.
 
 ```ts
+import { useImmerState } from "@shrugsy/use-immer-state";
+
 const [user, setUser] = useImmerState({ id: 1, name: "john smith" });
 
 function handleUpdateUser(newName) {

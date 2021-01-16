@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react-hooks";
-import useImmerState from "../";
+import { useImmerState } from "../";
 import { MutationError } from "../utils";
 
 describe("mutation logger", () => {
