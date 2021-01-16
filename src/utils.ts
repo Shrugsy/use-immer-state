@@ -24,8 +24,8 @@ function logDiffs(partArray: Diff.Change[]) {
 
 export class MutationError extends Error {
   diffs?: Diff.Change[];
-  constructor(message: string, diffs?: Diff.Change[], ...params: any[]) {
-    super(...params);
+  constructor(message: string, diffs?: Diff.Change[]) {
+    super(message);
     this.name = "MutationError";
     this.message = message;
     this.diffs = diffs;

@@ -150,14 +150,28 @@ function useImmerState<S>(initialState: S | (() => S)) {
     dispatchAction(restoreCheckpointAction());
   }, [dispatchAction]);
 
-  const extraApi = {
-    history: state.history,
-    stepNum: state.stepNum,
-    goTo,
-    saveCheckpoint,
-    restoreCheckpoint,
-    reset,
-  };
+  const extraApi = React.useMemo(
+    () => ({
+      history: state.history,
+      stepNum: state.stepNum,
+      goTo,
+      saveCheckpoint,
+      restoreCheckpoint,
+      checkpoint: state.checkpoint,
+      isCheckpointValid: state.isCheckpointValid,
+      reset,
+    }),
+    [
+      state.history,
+      state.stepNum,
+      goTo,
+      saveCheckpoint,
+      restoreCheckpoint,
+      state.checkpoint,
+      state.isCheckpointValid,
+      reset,
+    ]
+  );
 
   return [state.history[state.stepNum], setState, extraApi] as const;
 }
