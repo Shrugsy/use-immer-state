@@ -3,8 +3,7 @@ import produce, { Draft } from "immer";
 import { useTrackMutations, isStepValid } from "./utils";
 import { createAction, createReducer } from "@reduxjs/toolkit";
 
-// temporarily removed export
-// export { setAutoFreeze } from "immer";
+export { setAutoFreeze } from "immer";
 
 const goToAction = createAction<number>("state/goTo");
 const saveCheckpointAction = createAction("state/saveCheckpoint");
