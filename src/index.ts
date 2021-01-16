@@ -3,13 +3,15 @@ import produce, { Draft } from "immer";
 import { useTrackMutations, isStepValid } from "./utils";
 import { createAction, createReducer } from "@reduxjs/toolkit";
 
+export { setAutoFreeze } from "immer";
+
 const goToAction = createAction<number>("state/goTo");
 const saveCheckpointAction = createAction("state/saveCheckpoint");
 const restoreCheckpointAction = createAction("state/restoreCheckpoint");
 const resetAction = createAction("state/reset");
 
 type ReducerState<S> = {
-  history: S[];
+  history: ReadonlyArray<S>;
   stepNum: number;
   checkpoint: number;
   isCheckpointValid: boolean;

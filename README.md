@@ -126,7 +126,7 @@ const [state, setState, extraAPI] = useImmerState(initialState);
 
 | Name              | Type                   | Description                                                                                                                                                                                                                                                                                         |
 | ----------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| history           | S[]                    | `(default [initialState])` An array of the state history                                                                                                                                                                                                                                            |
+| history           | ReadOnlyArray\<S\>     | `(default [initialState])` An array of the state history                                                                                                                                                                                                                                            |
 | stepNum           | number                 | `(default 0)` The current index within the state history                                                                                                                                                                                                                                            |
 | goTo              | (step: number) => void | Change the current state to a particular index within the state history                                                                                                                                                                                                                             |
 | saveCheckpoint    | () => void             | Saves the current index within the state history to a 'checkpoint' that can be restored later                                                                                                                                                                                                       |
@@ -136,3 +136,22 @@ const [state, setState, extraAPI] = useImmerState(initialState);
 | reset             | () => void             | Resets state, history and checkpoint back to the initial state.                                                                                                                                                                                                                                     |
 
 Please try the [codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-state-example-tjptk?file=/src/App.tsx) to see an example of the API in action.
+
+## Mutation detection
+
+This library expects that mutating logic is only written using the functional update notation within a `setState` call. Any attempts to mutate the state outside of this are not supported.
+
+If an uncontrolled mutation is detected, a `MutationError` will be thrown (a custom error type exported by this library), and the diff details will be logged to the console to highlight the detected mutation and assist with detecting the cause.
+This library also includes the ability to detect mutations to serializable state.
+
+See this [codesandbox example](https://llyz9.csb.app/) to view how the mutation is detected and shown in the console.
+
+![Mutation log output](/assets/mutation_log_output.png?raw=true "Optional Title")
+
+Note:
+
+> This feature is disabled in production mode.
+
+> By default, immer freezes the state recursively after it has been used. This means that attempted mutations will not have an effect, but will not reliably be detected and throw an error for every setup/browser when the attempt is made.  
+>  What this means is that the mutation may only be detected in between the first and second state.  
+>  This library re-exports `setAutoFreeze` from `immer` which can help narrow down a pesky mutation, as calling `setAutoFreeze(false)` will prevent immer freezing the state, and allow the mutation detection from this library to reliably detect uncontrolled mutations occurring to a serializable state value.
