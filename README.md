@@ -22,7 +22,10 @@ npm i @shrugsy/use-immer-state
 - Provides inbuilt time-travel history including 'checkpoints', 'goTo', and 'reset' functionality.
 - Full typescript support
 
-> Note: If you're looking to be able to write 'mutable' draft updates for more complex state, I recommend checking out [use-local-slice](https://www.npmjs.com/package/use-local-slice)
+> Note: If you're looking to be able to write 'mutable' draft updates for more complex state, I recommend either:
+>
+> - Check out [use-local-slice](https://www.npmjs.com/package/use-local-slice).
+> - Use [`createReducer`](https://redux-toolkit.js.org/api/createReducer) from [`@reduxjs/toolkit`](https://www.npmjs.com/package/@reduxjs/toolkit) in combination with the inbuilt `useReducer` hook.
 
 ## Usage
 
