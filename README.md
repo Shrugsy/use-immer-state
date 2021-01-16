@@ -61,6 +61,7 @@ The benefits shine more for nested updates that would be messy to write manually
 e.g.
 
 ```ts
+// given some initial state like so:
 const initialState = [
   {
     todo: "Learn typescript",
@@ -75,7 +76,9 @@ const initialState = [
     done: false,
   },
 ];
+```
 
+```ts
 const [todos, setTodos] = useImmerState(initialState);
 
 function handleToggleTodo(index, isDone) {
@@ -88,9 +91,11 @@ Note: To achieve a similar effect with plain `useState`,
 the update would look more like this:
 
 ```ts
+const [todos, setTodos] = useState(initialState);
+
 function handleToggleTodo(index, isDone) {
   setTodos((prevTodos) => {
-    prevTodos.map((todo, idx) => {
+    return prevTodos.map((todo, idx) => {
       if (idx !== index) return todo;
       return { ...todo, done: isDone };
     });
@@ -102,7 +107,7 @@ Note that the deeper the nested updates become, the larger the advantage will be
 
 ### Advanced Usage
 
-The tuple returned by `useImmerState` returns an optional third value; `extraAPI` like so:
+The tuple returned by `useImmerState` includes an optional third value; `extraAPI` like so:
 
 ```ts
 const [state, setState, extraAPI] = useImmerState(initialState);
@@ -124,3 +129,5 @@ const [state, setState, extraAPI] = useImmerState(initialState);
 | checkpoint        | number                 | `(default 0)` The index within the state history for the saved checkpoint                                                                                                                                                                                                                           |
 | isCheckpointValid | boolean                | `(default true)` Indicates whether the saved checkpoint is valid and accessible to restore. A checkpoint will be invalidated if the history gets overwritten such that it overwrites the saved checkpoint. History is overwritten when writing new state while at a step number besides the latest. |
 | reset             | () => void             | Resets state, history and checkpoint back to the initial state.                                                                                                                                                                                                                                     |
+
+Please try the [codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-state-example-tjptk?file=/src/App.tsx) to see an example of the API in action.
