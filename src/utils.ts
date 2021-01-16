@@ -1,7 +1,7 @@
 import * as React from "react";
-import * as Diff from "diff";
+import { diffChars, Change } from "diff";
 
-function getPartColor(part: Diff.Change) {
+function getPartColor(part: Change) {
   if (part.added) {
     return "green";
   } else if (part.removed) {
@@ -10,7 +10,7 @@ function getPartColor(part: Diff.Change) {
   return "grey";
 }
 
-function logDiffs(partArray: Diff.Change[]) {
+function logDiffs(partArray: Change[]) {
   let diffStr = "";
   const cssArray = [] as string[];
   partArray.forEach((part) => {
@@ -23,8 +23,8 @@ function logDiffs(partArray: Diff.Change[]) {
 }
 
 export class MutationError extends Error {
-  diffs?: Diff.Change[];
-  constructor(message: string, diffs?: Diff.Change[]) {
+  diffs?: Change[];
+  constructor(message: string, diffs?: Change[]) {
     super(message);
     this.name = "MutationError";
     this.message = message;
@@ -47,7 +47,7 @@ export function useTrackMutations<S>(state: S) {
     const lastRender = prevStateStringified.current;
     const thisRender = JSON.stringify(prevStateRaw.current);
     if (lastRender !== thisRender) {
-      const diffs = Diff.diffChars(lastRender, thisRender);
+      const diffs = diffChars(lastRender, thisRender);
       logDiffs(diffs);
       const errMsg =
         "Detected a state mutation between renders. See console output and stack trace for details.";
