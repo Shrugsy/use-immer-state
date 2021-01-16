@@ -25,7 +25,7 @@ npm i @shrugsy/use-immer-state
 
 ## Features
 
-- Provides same functionality as `useState`.
+- Includes all functionality from `useState`.
 - When using the 'functional update' setter callback, updates can be written 'mutably', and the setter internally uses `immer` to produce the next immutable state.
 - Throws an error if a state mutation is detected between mutations to help fix bad habits (except in production mode).
 - Provides inbuilt time-travel history including 'checkpoints', 'goTo', and 'reset' functionality.

@@ -1,7 +1,7 @@
 {
   "name": "@shrugsy/use-immer-state",
-  "version": "1.0.4",
-  "description": "Use immutable state. Super-charged use-state with immer capabilities.",
+  "version": "1.0.5",
+  "description": "Use immutable state with inbuilt time travel. Super-charged use-state with immer capabilities.",
   "main": "dist/index.js",
   "source": "src/index.ts",
   "types": "dist/index.d.ts",
@@ -30,7 +30,9 @@
     "use-immer-state",
     "useImmerState",
     "immutable",
-    "immutability"
+    "immutability",
+    "time-travel",
+    "history"
   ],
   "author": "Josh Fraser",
   "license": "MIT",
