@@ -22,6 +22,8 @@ npm i @shrugsy/use-immer-state
 - Provides inbuilt time-travel history including 'checkpoints', 'goTo', and 'reset' functionality.
 - Full typescript support
 
+> Note: If you're looking to be able to write 'mutable' draft updates for more complex state, I recommend checking out [use-local-slice](https://www.npmjs.com/package/use-local-slice)
+
 ## Usage
 
 ### Basic Usage
