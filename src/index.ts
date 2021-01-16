@@ -26,87 +26,97 @@ type ReducerState<S> = {
  * @param initialState - initial state, or lazy function to return initial state
  */
 function useImmerState<S>(initialState: S | (() => S)) {
+  const initialStateRef = React.useRef(initialState);
   const isFirstRenderRef = React.useRef(true);
 
-  let initialStatePiece = initialState;
-  if (isFirstRenderRef.current) {
-    if (typeof initialState === "function") {
-      const lazyInitialState = initialState as () => S;
+  const setStateAction = React.useMemo(
+    () =>
+      createAction<S | ((draftState: Draft<S>) => Draft<S> | void | undefined)>(
+        "state/setState"
+      ),
+    []
+  );
+
+  const initialReducerState = React.useMemo<ReducerState<S>>(() => {
+    const passedInInitialState = initialStateRef.current;
+    let initialStatePiece = passedInInitialState;
+
+    if (typeof passedInInitialState === "function") {
+      const lazyInitialState = passedInInitialState as () => S;
       initialStatePiece = lazyInitialState();
     } else {
-      initialStatePiece = initialState;
+      initialStatePiece = passedInInitialState;
     }
-  }
+
+    return {
+      history: [initialStatePiece],
+      stepNum: 0,
+      checkpoint: 0,
+      isCheckpointValid: true,
+    };
+  }, []);
+
+  const reducer = React.useMemo(() => {
+    return createReducer(initialReducerState, (builder) => {
+      builder
+        .addCase(setStateAction, (draftState, action) => {
+          if (typeof action.payload === "function") {
+            const updater = action.payload as (
+              draftState: Draft<S>
+            ) => Draft<S> | void | undefined;
+            // chop off any 'future' history if applicable
+            draftState.history.splice(draftState.stepNum + 1);
+
+            // get new state piece
+            const nextStatePiece = produce(
+              draftState.history[draftState.stepNum],
+              updater
+            ) as Draft<S>;
+            draftState.stepNum++;
+            draftState.history.push(nextStatePiece);
+          } else {
+            draftState.history.splice(draftState.stepNum + 1);
+            draftState.stepNum++;
+
+            const draftUpdates = action.payload as Draft<S>;
+            draftState.history.push(draftUpdates);
+          }
+
+          // checkpoint needs to have been one of the existing items,
+          // excluding the new one
+          if (draftState.checkpoint >= draftState.history.length - 1) {
+            draftState.isCheckpointValid = false;
+          }
+        })
+        .addCase(goToAction, (draftState, action) => {
+          const step = action.payload;
+          if (isStepValid(step, draftState.history.length)) {
+            draftState.stepNum = step;
+          }
+        })
+        .addCase(saveCheckpointAction, (draftState) => {
+          draftState.isCheckpointValid = true;
+          draftState.checkpoint = draftState.stepNum;
+        })
+        .addCase(restoreCheckpointAction, (draftState) => {
+          const { checkpoint, isCheckpointValid } = draftState;
+          if (!isCheckpointValid) {
+            console.error(
+              `Unable to restore checkpoint: saved checkpoint at index ${checkpoint} no longer exists!`
+            );
+            return;
+          }
+          if (isStepValid(checkpoint, draftState.history.length)) {
+            draftState.stepNum = checkpoint;
+          }
+        })
+        .addCase(resetAction, () => {
+          return initialReducerState;
+        });
+    });
+  }, [setStateAction, initialReducerState]);
+
   isFirstRenderRef.current = false;
-
-  const initialReducerState: ReducerState<S> = {
-    history: [initialStatePiece] as S[],
-    stepNum: 0,
-    checkpoint: 0,
-    isCheckpointValid: true,
-  };
-
-  const setStateAction = createAction<
-    S | ((draftState: Draft<S>) => Draft<S> | void | undefined)
-  >("state/setState");
-
-  const reducer = createReducer(initialReducerState, (builder) => {
-    builder
-      .addCase(setStateAction, (draftState, action) => {
-        if (typeof action.payload === "function") {
-          const updater = action.payload as (
-            draftState: Draft<S>
-          ) => Draft<S> | void | undefined;
-          // chop off any 'future' history if applicable
-          draftState.history.splice(draftState.stepNum + 1);
-
-          // get new state piece
-          const nextStatePiece = produce(
-            draftState.history[draftState.stepNum],
-            updater
-          ) as Draft<S>;
-          draftState.stepNum++;
-          draftState.history.push(nextStatePiece);
-        } else {
-          draftState.history.splice(draftState.stepNum + 1);
-          draftState.stepNum++;
-
-          const draftUpdates = action.payload as Draft<S>;
-          draftState.history.push(draftUpdates);
-        }
-
-        // checkpoint needs to have been one of the existing items,
-        // excluding the new one
-        if (draftState.checkpoint >= draftState.history.length - 1) {
-          draftState.isCheckpointValid = false;
-        }
-      })
-      .addCase(goToAction, (draftState, action) => {
-        const step = action.payload;
-        if (isStepValid(step, draftState.history.length)) {
-          draftState.stepNum = step;
-        }
-      })
-      .addCase(saveCheckpointAction, (draftState) => {
-        draftState.isCheckpointValid = true;
-        draftState.checkpoint = draftState.stepNum;
-      })
-      .addCase(restoreCheckpointAction, (draftState) => {
-        const { checkpoint, isCheckpointValid } = draftState;
-        if (!isCheckpointValid) {
-          console.error(
-            `Unable to restore checkpoint: saved checkpoint at index ${checkpoint} no longer exists!`
-          );
-          return;
-        }
-        if (isStepValid(checkpoint, draftState.history.length)) {
-          draftState.stepNum = checkpoint;
-        }
-      })
-      .addCase(resetAction, () => {
-        return initialReducerState;
-      });
-  });
 
   const [state, dispatchAction] = React.useReducer(
     reducer,
@@ -123,14 +133,9 @@ function useImmerState<S>(initialState: S | (() => S)) {
 
   const setState = React.useCallback(
     (updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)) => {
-      // manually invoke this action since the action is created within the hook
-      // (to help with typing)
-      dispatchAction({
-        type: "state/setState",
-        payload: updates,
-      });
+      dispatchAction(setStateAction(updates));
     },
-    [dispatchAction]
+    [dispatchAction, setStateAction]
   );
 
   const goTo = React.useCallback(
