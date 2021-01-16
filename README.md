@@ -8,11 +8,20 @@ A React hook that provides a supercharged version of the `useState` hook. Allows
 
 [codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-state-example-tjptk?file=/src/App.tsx)
 
+## Table of Contents
+
+1. [Installation](#Installation)
+1. [Features](#Features)
+1. [Usage](#Usage)
+1. [Mutation Detection](#Mutation-Detection)
+
 ## Installation
 
 ```
 npm i @shrugsy/use-immer-state
 ```
+
+**[⬆ back to top](#table-of-contents)**
 
 ## Features
 
@@ -26,6 +35,8 @@ npm i @shrugsy/use-immer-state
 >
 > - Check out [use-local-slice](https://www.npmjs.com/package/use-local-slice).
 > - Use [`createReducer`](https://redux-toolkit.js.org/api/createReducer) from [`@reduxjs/toolkit`](https://www.npmjs.com/package/@reduxjs/toolkit) in combination with the inbuilt `useReducer` hook.
+
+**[⬆ back to top](#table-of-contents)**
 
 ## Usage
 
@@ -110,6 +121,8 @@ function handleToggleTodo(index, isDone) {
 
 Note that the deeper the nested updates become, the larger the advantage will be to use this notation.
 
+**[⬆ back to top](#table-of-contents)**
+
 ### Advanced Usage
 
 The tuple returned by `useImmerState` includes an optional third value; `extraAPI` like so:
@@ -137,6 +150,8 @@ const [state, setState, extraAPI] = useImmerState(initialState);
 
 Please try the [codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-state-example-tjptk?file=/src/App.tsx) to see an example of the API in action.
 
+**[⬆ back to top](#table-of-contents)**
+
 ## Mutation detection
 
 This library expects that mutating logic is only written using the functional update notation within a `setState` call. Any attempts to mutate the state outside of this are not supported.
@@ -155,3 +170,5 @@ Note:
 > By default, immer freezes the state recursively after it has been used. This means that attempted mutations will not have an effect, but will not reliably be detected and throw an error for every setup/browser when the attempt is made.  
 >  What this means is that the mutation may only be detected in between the first and second state.  
 >  This library re-exports `setAutoFreeze` from `immer` which can help narrow down a pesky mutation, as calling `setAutoFreeze(false)` will prevent immer freezing the state, and allow the mutation detection from this library to reliably detect uncontrolled mutations occurring to a serializable state value.
+
+**[⬆ back to top](#table-of-contents)**
