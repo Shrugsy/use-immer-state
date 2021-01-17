@@ -1,27 +1,8 @@
 import * as React from "react";
-import produce, { Draft } from "immer";
-import { useTrackMutations, isStepValid } from "./utils";
-import { createAction, createReducer } from "@reduxjs/toolkit";
-
+import { Draft } from "immer";
+import { useTrackMutations } from "./utils";
+import { makeReducer, ReducerState } from "./makeReducer";
 export { setAutoFreeze } from "immer";
-
-/*=============================/
-/            Actions           /
-/=============================*/
-// Note, another action 'setStateAction' is declared later within component
-const goToAction = createAction<number>("state/goTo");
-const goBackAction = createAction("state/goBack");
-const goForwardAction = createAction("state/goForward");
-const saveCheckpointAction = createAction("state/saveCheckpoint");
-const restoreCheckpointAction = createAction("state/restoreCheckpoint");
-const resetAction = createAction("state/reset");
-
-type ReducerState<S> = {
-  history: ReadonlyArray<S>;
-  stepNum: number;
-  checkpoint: number;
-  isCheckpointValid: boolean;
-};
 
 /**
  * Hook similar to useState, but uses immer internally to ensure immutable updates.
@@ -41,13 +22,6 @@ export function useImmerState<S>(initialState: S | (() => S)) {
   // initial state placed in a ref (and never changed)
   // so we can use it without lying to dependency arrays
   const initialStateRef = React.useRef(initialState);
-
-  const setStateAction = React.useMemo(() => {
-    // this action is defined within the component to get the generic S typing
-    return createAction<
-      S | ((draftState: Draft<S>) => Draft<S> | void | undefined)
-    >("state/setState");
-  }, []);
 
   /*=============================/
   /     Initial Reducer State    /
@@ -76,79 +50,8 @@ export function useImmerState<S>(initialState: S | (() => S)) {
   /           Reducer            /
   /=============================*/
   const reducer = React.useMemo(() => {
-    return createReducer(initialReducerState, (builder) => {
-      builder
-        .addCase(setStateAction, (draftState, action) => {
-          if (typeof action.payload === "function") {
-            const updater = action.payload as (
-              draftState: Draft<S>
-            ) => Draft<S> | void | undefined;
-            // chop off any 'future' history if applicable
-            draftState.history.splice(draftState.stepNum + 1);
-
-            // get new state piece
-            const nextStatePiece = produce(
-              draftState.history[draftState.stepNum],
-              updater
-            ) as Draft<S>;
-            draftState.stepNum++;
-            draftState.history.push(nextStatePiece);
-          } else {
-            draftState.history.splice(draftState.stepNum + 1);
-            draftState.stepNum++;
-
-            const draftUpdates = action.payload as Draft<S>;
-            draftState.history.push(draftUpdates);
-          }
-
-          // checkpoint needs to have been one of the existing items,
-          // excluding the new one
-          if (draftState.checkpoint >= draftState.history.length - 1) {
-            draftState.isCheckpointValid = false;
-          }
-        })
-
-        .addCase(goToAction, (draftState, action) => {
-          const step = action.payload;
-          if (isStepValid(step, draftState.history.length)) {
-            draftState.stepNum = step;
-          }
-        })
-        .addCase(goBackAction, (draftState) => {
-          const previousStep = draftState.stepNum - 1;
-          if (isStepValid(previousStep, draftState.history.length)) {
-            draftState.stepNum = previousStep;
-          }
-        })
-        .addCase(goForwardAction, (draftState) => {
-          const nextStep = draftState.stepNum + 1;
-          if (isStepValid(nextStep, draftState.history.length)) {
-            draftState.stepNum = nextStep;
-          }
-        })
-
-        .addCase(saveCheckpointAction, (draftState) => {
-          draftState.isCheckpointValid = true;
-          draftState.checkpoint = draftState.stepNum;
-        })
-        .addCase(restoreCheckpointAction, (draftState) => {
-          const { checkpoint, isCheckpointValid } = draftState;
-          if (!isCheckpointValid) {
-            console.error(
-              `Unable to restore checkpoint: saved checkpoint at index ${checkpoint} no longer exists!`
-            );
-            return;
-          }
-          if (isStepValid(checkpoint, draftState.history.length)) {
-            draftState.stepNum = checkpoint;
-          }
-        })
-
-        .addCase(resetAction, () => {
-          return initialReducerState;
-        });
-    });
-  }, [setStateAction, initialReducerState]);
+    return makeReducer(initialReducerState);
+  }, [initialReducerState]);
 
   /*=============================/
   /          useReducer          /
@@ -179,9 +82,12 @@ export function useImmerState<S>(initialState: S | (() => S)) {
    */
   const setState = React.useCallback(
     (updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)) => {
-      dispatchAction(setStateAction(updates));
+      dispatchAction({
+        type: "state/setState",
+        payload: updates,
+      });
     },
-    [dispatchAction, setStateAction]
+    [dispatchAction]
   );
 
   /**
@@ -189,7 +95,10 @@ export function useImmerState<S>(initialState: S | (() => S)) {
    */
   const goTo = React.useCallback(
     (step: number) => {
-      dispatchAction(goToAction(step));
+      dispatchAction({
+        type: "state/goTo",
+        payload: step,
+      });
     },
     [dispatchAction]
   );
@@ -198,21 +107,27 @@ export function useImmerState<S>(initialState: S | (() => S)) {
    * Go to the previous step in state history.
    */
   const goBack = React.useCallback(() => {
-    dispatchAction(goBackAction());
+    dispatchAction({
+      type: "state/goBack",
+    });
   }, [dispatchAction]);
 
   /**
    * Go to the next step in state history.
    */
   const goForward = React.useCallback(() => {
-    dispatchAction(goForwardAction());
+    dispatchAction({
+      type: "state/goForward",
+    });
   }, [dispatchAction]);
 
   /**
    * Save the current step in state history as a checkpoint.
    */
   const saveCheckpoint = React.useCallback(() => {
-    dispatchAction(saveCheckpointAction());
+    dispatchAction({
+      type: "state/saveCheckpoint",
+    });
   }, [dispatchAction]);
 
   /**
@@ -220,14 +135,18 @@ export function useImmerState<S>(initialState: S | (() => S)) {
    * Will restore to initial state if no checkpoint was explicitly saved.
    */
   const restoreCheckpoint = React.useCallback(() => {
-    dispatchAction(restoreCheckpointAction());
+    dispatchAction({
+      type: "state/restoreCheckpoint",
+    });
   }, [dispatchAction]);
 
   /**
    * Reset to initial state, including state history & checkpoint.
    */
   const reset = React.useCallback(() => {
-    dispatchAction(resetAction());
+    dispatchAction({
+      type: "state/reset",
+    });
   }, [dispatchAction]);
 
   const extraApi = React.useMemo(
