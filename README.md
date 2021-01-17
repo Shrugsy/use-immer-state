@@ -34,8 +34,8 @@ import { useImmerState } from "@shrugsy/use-immer-state";
 - Includes all functionality from `useState`.
 - When using the 'functional update' setter callback, updates can be written 'mutably', and the setter internally uses `immer` to produce the next immutable state.
 - Throws an error if a state mutation is detected between mutations to help fix bad habits (except in production mode).
-- Provides inbuilt time-travel history including 'checkpoints', 'goTo', and 'reset' functionality.
-- Full typescript support
+- Provides inbuilt time-travel history including 'checkpoints', 'goTo', 'goBack', 'goForward' and 'reset' functionality.
+- Full typescript support.
 
 > Note: If you're looking to be able to write 'mutable' draft updates for more complex state, I recommend either:
 >
@@ -150,7 +150,9 @@ const [state, setState, extraAPI] = useImmerState(initialState);
 | history           | ReadOnlyArray\<S\>     | `(default [initialState])` An array of the state history                                                                                                                                                                                                                                            |
 | stepNum           | number                 | `(default 0)` The current index within the state history                                                                                                                                                                                                                                            |
 | goTo              | (step: number) => void | Change the current state to a particular index within the state history                                                                                                                                                                                                                             |
-| saveCheckpoint    | () => void             | Saves the current index within the state history to a 'checkpoint' that can be restored later                                                                                                                                                                                                       |
+| goBack            | () => void             | Go to the previous step (index) within the state history                                                                                                                                                                                                                                            |
+| goForward         | () => void             | Go to the next step (index) within the state history                                                                                                                                                                                                                                                |
+| saveCheckpoint    | () => void             | Saves the current step (index) within the state history to a 'checkpoint' that can be restored later                                                                                                                                                                                                |
 | restoreCheckpoint | () => void             | Restores the state to the saved 'checkpoint' if it is still valid.                                                                                                                                                                                                                                  |
 | checkpoint        | number                 | `(default 0)` The index within the state history for the saved checkpoint                                                                                                                                                                                                                           |
 | isCheckpointValid | boolean                | `(default true)` Indicates whether the saved checkpoint is valid and accessible to restore. A checkpoint will be invalidated if the history gets overwritten such that it overwrites the saved checkpoint. History is overwritten when writing new state while at a step number besides the latest. |

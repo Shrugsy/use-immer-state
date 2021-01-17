@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react-hooks";
 import { useImmerState } from "../";
 import { MutationError } from "../utils";
+import { mockConsoleError } from "./helpers";
 
 describe("mutation logger", () => {
   test("logs and throws if mutations are detected", () => {
@@ -15,9 +16,8 @@ describe("mutation logger", () => {
     initialState[0].value = "mutatedFoo";
 
     // silence the expected errors
-    const mock = jest.spyOn(console, "error");
-    mock.mockImplementation(() => null);
+    mockConsoleError.mute();
     expect(rerender).toThrow(MutationError);
-    mock.mockRestore();
+    mockConsoleError.unmute();
   });
 });

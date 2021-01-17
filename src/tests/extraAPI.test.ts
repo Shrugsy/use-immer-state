@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react-hooks";
 import { useImmerState } from "../";
+import { mockConsoleError } from "./helpers";
 
 describe("extra API", () => {
   test("shows history, step, and can goto a point in history", () => {
@@ -231,6 +232,287 @@ describe("extra API", () => {
         { id: 1, value: "baz" },
         { id: 2, value: "hello" },
         { id: 3, value: "world" },
+      ],
+    ]);
+  });
+
+  test("trying to 'goTo' with an invalid input won't work and won't break functionality", () => {
+    const initialState = [
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ];
+
+    const { result } = renderHook(() => useImmerState(initialState));
+
+    // first render
+    let [state, setState, { history, stepNum, goTo }] = result.current;
+    expect(stepNum).toEqual(0);
+    act(() => {
+      setState((prev) => {
+        prev[1].value = "newBar";
+      });
+    });
+
+    // second render
+    [state, setState, { history, stepNum, goTo }] = result.current;
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "newBar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    mockConsoleError.mute();
+    act(() => {
+      // @ts-expect-error ts(2345) - intentionally passing wrong type to check behaviour
+      goTo("0");
+    });
+    mockConsoleError.unmute();
+
+    // still second render (no new render should have triggered)
+    [state, setState, { history, stepNum, goTo }] = result.current;
+    // step number & state shouldn't have changed
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "newBar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    act(() => {
+      // calling again afterwards should still function as expected
+      goTo(0);
+    });
+
+    // third render
+    [state, setState, { history, stepNum, goTo }] = result.current;
+    // step number & state should now change as per the 'goTo(0)' call
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+  });
+
+  test("can goBack and goForward one step at a time", () => {
+    const initialState = [
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ];
+
+    const { result } = renderHook(() => useImmerState(initialState));
+
+    // first render
+    let [
+      state,
+      setState,
+      { history, stepNum, goBack, goForward },
+    ] = result.current;
+    expect(stepNum).toEqual(0);
+    act(() => {
+      setState((prev) => {
+        prev[1].value = "newBar";
+      });
+    });
+
+    act(() => {
+      setState((prev) => {
+        prev[0].value = "newFoo";
+      });
+    });
+
+    // third render (set state twice separately)
+    [state, setState, { history, stepNum, goBack, goForward }] = result.current;
+    expect(stepNum).toEqual(2);
+    expect(state).toEqual([
+      { id: 0, value: "newFoo" },
+      { id: 1, value: "newBar" },
+    ]);
+
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    mockConsoleError.mute();
+    act(() => {
+      // try to go forward, but already at latest step in history
+      goForward();
+    });
+    mockConsoleError.unmute();
+
+    // should still be third render, nothing should have happened besides a console warning
+    [state, setState, { history, stepNum, goBack, goForward }] = result.current;
+    expect(stepNum).toEqual(2);
+    expect(state).toEqual([
+      { id: 0, value: "newFoo" },
+      { id: 1, value: "newBar" },
+    ]);
+
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    act(() => {
+      // should be able to go back a step fine
+      goBack();
+    });
+
+    // fourth render
+    [state, setState, { history, stepNum, goBack, goForward }] = result.current;
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "newBar" },
+    ]);
+
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    act(() => {
+      // go back to first step (initial state)
+      goBack();
+    });
+
+    // fifth render
+    [state, setState, { history, stepNum, goBack, goForward }] = result.current;
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    mockConsoleError.mute();
+    act(() => {
+      // try going back again, but already at earliest step
+      goBack();
+    });
+    mockConsoleError.unmute();
+
+    // fifth render (shouldn't re-render)
+    [state, setState, { history, stepNum, goBack, goForward }] = result.current;
+    expect(stepNum).toEqual(0);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "bar" },
+    ]);
+
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
+      ],
+    ]);
+
+    act(() => {
+      // should be able to go forward fine
+      goForward();
+    });
+
+    // sixth render
+    [state, setState, { history, stepNum, goBack, goForward }] = result.current;
+    expect(stepNum).toEqual(1);
+    expect(state).toEqual([
+      { id: 0, value: "foo" },
+      { id: 1, value: "newBar" },
+    ]);
+
+    expect(history).toEqual([
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "bar" },
+      ],
+      [
+        { id: 0, value: "foo" },
+        { id: 1, value: "newBar" },
+      ],
+      [
+        { id: 0, value: "newFoo" },
+        { id: 1, value: "newBar" },
       ],
     ]);
   });

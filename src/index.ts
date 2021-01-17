@@ -5,7 +5,13 @@ import { createAction, createReducer } from "@reduxjs/toolkit";
 
 export { setAutoFreeze } from "immer";
 
+/*=============================/
+/            Actions           /
+/=============================*/
+// Note, another action 'setStateAction' is declared later within component
 const goToAction = createAction<number>("state/goTo");
+const goBackAction = createAction("state/goBack");
+const goForwardAction = createAction("state/goForward");
 const saveCheckpointAction = createAction("state/saveCheckpoint");
 const restoreCheckpointAction = createAction("state/restoreCheckpoint");
 const resetAction = createAction("state/reset");
@@ -32,20 +38,25 @@ type ReducerState<S> = {
  * @param initialState - initial state, or lazy function to return initial state
  */
 export function useImmerState<S>(initialState: S | (() => S)) {
+  // initial state placed in a ref (and never changed)
+  // so we can use it without lying to dependency arrays
   const initialStateRef = React.useRef(initialState);
 
-  const setStateAction = React.useMemo(
-    () =>
-      createAction<S | ((draftState: Draft<S>) => Draft<S> | void | undefined)>(
-        "state/setState"
-      ),
-    []
-  );
+  const setStateAction = React.useMemo(() => {
+    // this action is defined within the component to get the generic S typing
+    return createAction<
+      S | ((draftState: Draft<S>) => Draft<S> | void | undefined)
+    >("state/setState");
+  }, []);
 
+  /*=============================/
+  /     Initial Reducer State    /
+  /=============================*/
   const initialReducerState = React.useMemo<ReducerState<S>>(() => {
     const passedInInitialState = initialStateRef.current;
     let initialStatePiece = passedInInitialState;
 
+    // handle lazy initial state if applicable
     if (typeof passedInInitialState === "function") {
       const lazyInitialState = passedInInitialState as () => S;
       initialStatePiece = lazyInitialState();
@@ -61,6 +72,9 @@ export function useImmerState<S>(initialState: S | (() => S)) {
     };
   }, []);
 
+  /*=============================/
+  /           Reducer            /
+  /=============================*/
   const reducer = React.useMemo(() => {
     return createReducer(initialReducerState, (builder) => {
       builder
@@ -93,12 +107,26 @@ export function useImmerState<S>(initialState: S | (() => S)) {
             draftState.isCheckpointValid = false;
           }
         })
+
         .addCase(goToAction, (draftState, action) => {
           const step = action.payload;
           if (isStepValid(step, draftState.history.length)) {
             draftState.stepNum = step;
           }
         })
+        .addCase(goBackAction, (draftState) => {
+          const previousStep = draftState.stepNum - 1;
+          if (isStepValid(previousStep, draftState.history.length)) {
+            draftState.stepNum = previousStep;
+          }
+        })
+        .addCase(goForwardAction, (draftState) => {
+          const nextStep = draftState.stepNum + 1;
+          if (isStepValid(nextStep, draftState.history.length)) {
+            draftState.stepNum = nextStep;
+          }
+        })
+
         .addCase(saveCheckpointAction, (draftState) => {
           draftState.isCheckpointValid = true;
           draftState.checkpoint = draftState.stepNum;
@@ -115,17 +143,24 @@ export function useImmerState<S>(initialState: S | (() => S)) {
             draftState.stepNum = checkpoint;
           }
         })
+
         .addCase(resetAction, () => {
           return initialReducerState;
         });
     });
   }, [setStateAction, initialReducerState]);
 
+  /*=============================/
+  /          useReducer          /
+  /=============================*/
   const [state, dispatchAction] = React.useReducer(
     reducer,
     initialReducerState
   );
 
+  /*=============================/
+  /      Mutation tracking       /
+  /=============================*/
   if (process.env.NODE_ENV !== "production") {
     // Yes we broke the rule, but kept the spirit.
     // The number of hooks won't change between renders,
@@ -134,6 +169,14 @@ export function useImmerState<S>(initialState: S | (() => S)) {
     useTrackMutations(state.history);
   }
 
+  /*=============================/
+  /         Exposed API          /
+  /=============================*/
+  /**
+   * Set new state. Accepts either a static value, or functional notation.
+   * Using functional notation allows for writing draft updates 'mutably'
+   * to produce the next immutable state.
+   */
   const setState = React.useCallback(
     (updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)) => {
       dispatchAction(setStateAction(updates));
@@ -141,6 +184,9 @@ export function useImmerState<S>(initialState: S | (() => S)) {
     [dispatchAction, setStateAction]
   );
 
+  /**
+   * Go to a provided step number (index) in the state history.
+   */
   const goTo = React.useCallback(
     (step: number) => {
       dispatchAction(goToAction(step));
@@ -148,16 +194,40 @@ export function useImmerState<S>(initialState: S | (() => S)) {
     [dispatchAction]
   );
 
-  const reset = React.useCallback(() => {
-    dispatchAction(resetAction());
+  /**
+   * Go to the previous step in state history.
+   */
+  const goBack = React.useCallback(() => {
+    dispatchAction(goBackAction());
   }, [dispatchAction]);
 
+  /**
+   * Go to the next step in state history.
+   */
+  const goForward = React.useCallback(() => {
+    dispatchAction(goForwardAction());
+  }, [dispatchAction]);
+
+  /**
+   * Save the current step in state history as a checkpoint.
+   */
   const saveCheckpoint = React.useCallback(() => {
     dispatchAction(saveCheckpointAction());
   }, [dispatchAction]);
 
+  /**
+   * Restore the saved checkpoint step in state history.
+   * Will restore to initial state if no checkpoint was explicitly saved.
+   */
   const restoreCheckpoint = React.useCallback(() => {
     dispatchAction(restoreCheckpointAction());
+  }, [dispatchAction]);
+
+  /**
+   * Reset to initial state, including state history & checkpoint.
+   */
+  const reset = React.useCallback(() => {
+    dispatchAction(resetAction());
   }, [dispatchAction]);
 
   const extraApi = React.useMemo(
@@ -165,6 +235,8 @@ export function useImmerState<S>(initialState: S | (() => S)) {
       history: state.history,
       stepNum: state.stepNum,
       goTo,
+      goBack,
+      goForward,
       saveCheckpoint,
       restoreCheckpoint,
       checkpoint: state.checkpoint,
@@ -175,6 +247,8 @@ export function useImmerState<S>(initialState: S | (() => S)) {
       state.history,
       state.stepNum,
       goTo,
+      goBack,
+      goForward,
       saveCheckpoint,
       restoreCheckpoint,
       state.checkpoint,
