@@ -21,13 +21,18 @@ type ReducerState<S> = {
  * Hook similar to useState, but uses immer internally to ensure immutable updates.
  * Allows using the setter function to be written 'mutably',
  * while letting take care of applying the immutable updates.
+ *
+ * Provides time travel support including `history`, `checkpoints`, `goTo`,
+ * and `reset` functionality.
+ *
  * If not in development mode, checks for mutations between renders and will
  * throw an error if detected.
+ *
+ * https://github.com/Shrugsy/use-immer-state#readme
  * @param initialState - initial state, or lazy function to return initial state
  */
 export function useImmerState<S>(initialState: S | (() => S)) {
   const initialStateRef = React.useRef(initialState);
-  const isFirstRenderRef = React.useRef(true);
 
   const setStateAction = React.useMemo(
     () =>
@@ -115,8 +120,6 @@ export function useImmerState<S>(initialState: S | (() => S)) {
         });
     });
   }, [setStateAction, initialReducerState]);
-
-  isFirstRenderRef.current = false;
 
   const [state, dispatchAction] = React.useReducer(
     reducer,
