@@ -1,6 +1,6 @@
 {
   "name": "@shrugsy/use-immer-state",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Use immutable state with inbuilt time travel. Super-charged use-state with immer capabilities.",
   "source": "src/index.ts",
   "main": "dist/index.js",
