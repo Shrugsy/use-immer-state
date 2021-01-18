@@ -166,8 +166,7 @@ Please try the [codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-stat
 
 This library expects that mutating logic is only written using the functional update notation within a `setState` call. Any attempts to mutate the state outside of this are not supported.
 
-If an uncontrolled mutation is detected, a `MutationError` will be thrown (a custom error type exported by this library), and the diff details will be logged to the console to highlight the detected mutation and assist with detecting the cause.
-This library also includes the ability to detect mutations to serializable state.
+If an uncontrolled mutation is detected, a `MutationError` will be thrown (a custom error type exported by this library), and the path detected will be logged to the console to highlight the detected mutation and assist with detecting the cause.
 
 See this [codesandbox example](https://llyz9.csb.app/) to view how the mutation is detected and shown in the console.
 
