@@ -9,7 +9,7 @@ export type ReducerState<S> = {
 };
 
 export function makeReducer<S>(initialState: ReducerState<S>) {
-  return function reducer<S>(state: ReducerState<S>, action: AllActions<S>) {
+  return function reducer(state: ReducerState<S>, action: AllActions<S>) {
     switch (action.type) {
       case "state/setState": {
         return setStateReducer(state, action);
