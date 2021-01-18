@@ -69,7 +69,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
     // The number of hooks won't change between renders,
     // because the environment won't change between renders.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useTrackMutations(state.history);
+    useTrackMutations(state.history, "State History");
   }
 
   /*=============================/
