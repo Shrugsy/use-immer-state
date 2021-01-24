@@ -75,106 +75,97 @@ export function useImmerState<S>(initialState: S | (() => S)) {
   /*=============================/
   /         Exposed API          /
   /=============================*/
-  /**
-   * Set new state. Accepts either a static value, or functional notation.
-   * Using functional notation allows for writing draft updates 'mutably'
-   * to produce the next immutable state.
-   */
-  const setState = React.useCallback(
-    (updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)) => {
-      dispatchAction({
-        type: "state/setState",
-        payload: updates,
-      });
-    },
+
+  const handlers = React.useMemo(
+    () => ({
+      /**
+       * Set new state. Accepts either a static value, or functional notation.
+       * Using functional notation allows for writing draft updates 'mutably'
+       * to produce the next immutable state.
+       */
+      setState(
+        updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)
+      ) {
+        dispatchAction({
+          type: "state/setState",
+          payload: updates,
+        });
+      },
+      /**
+       * Go to a provided step number (index) in the state history.
+       */
+      goTo(step: number) {
+        dispatchAction({
+          type: "state/goTo",
+          payload: step,
+        });
+      },
+      /**
+       * Go to the previous step in state history.
+       */
+      goBack() {
+        dispatchAction({
+          type: "state/goBack",
+        });
+      },
+      /**
+       * Go to the next step in state history.
+       */
+      goForward() {
+        dispatchAction({
+          type: "state/goForward",
+        });
+      },
+      /**
+       * Save the current step in state history as a checkpoint.
+       */
+      saveCheckpoint() {
+        dispatchAction({
+          type: "state/saveCheckpoint",
+        });
+      },
+      /**
+       * Restore the saved checkpoint step in state history.
+       * Will restore to initial state if no checkpoint was explicitly saved.
+       */
+      restoreCheckpoint() {
+        dispatchAction({
+          type: "state/restoreCheckpoint",
+        });
+      },
+      /**
+       * Reset to initial state, including state history & checkpoint.
+       */
+      reset() {
+        dispatchAction({
+          type: "state/reset",
+        });
+      },
+    }),
     [dispatchAction]
   );
-
-  /**
-   * Go to a provided step number (index) in the state history.
-   */
-  const goTo = React.useCallback(
-    (step: number) => {
-      dispatchAction({
-        type: "state/goTo",
-        payload: step,
-      });
-    },
-    [dispatchAction]
-  );
-
-  /**
-   * Go to the previous step in state history.
-   */
-  const goBack = React.useCallback(() => {
-    dispatchAction({
-      type: "state/goBack",
-    });
-  }, [dispatchAction]);
-
-  /**
-   * Go to the next step in state history.
-   */
-  const goForward = React.useCallback(() => {
-    dispatchAction({
-      type: "state/goForward",
-    });
-  }, [dispatchAction]);
-
-  /**
-   * Save the current step in state history as a checkpoint.
-   */
-  const saveCheckpoint = React.useCallback(() => {
-    dispatchAction({
-      type: "state/saveCheckpoint",
-    });
-  }, [dispatchAction]);
-
-  /**
-   * Restore the saved checkpoint step in state history.
-   * Will restore to initial state if no checkpoint was explicitly saved.
-   */
-  const restoreCheckpoint = React.useCallback(() => {
-    dispatchAction({
-      type: "state/restoreCheckpoint",
-    });
-  }, [dispatchAction]);
-
-  /**
-   * Reset to initial state, including state history & checkpoint.
-   */
-  const reset = React.useCallback(() => {
-    dispatchAction({
-      type: "state/reset",
-    });
-  }, [dispatchAction]);
 
   const extraApi = React.useMemo(
     () => ({
       history: state.history,
       stepNum: state.stepNum,
-      goTo,
-      goBack,
-      goForward,
-      saveCheckpoint,
-      restoreCheckpoint,
+      goTo: handlers.goTo,
+      goBack: handlers.goBack,
+      goForward: handlers.goForward,
+      saveCheckpoint: handlers.saveCheckpoint,
+      restoreCheckpoint: handlers.restoreCheckpoint,
       checkpoint: state.checkpoint,
       isCheckpointValid: state.isCheckpointValid,
-      reset,
+      reset: handlers.reset,
     }),
     [
       state.history,
       state.stepNum,
-      goTo,
-      goBack,
-      goForward,
-      saveCheckpoint,
-      restoreCheckpoint,
       state.checkpoint,
       state.isCheckpointValid,
-      reset,
+      handlers,
     ]
   );
 
-  return [state.history[state.stepNum], setState, extraApi] as const;
+  return [state.history[state.stepNum], handlers.setState, extraApi] as const;
 }
