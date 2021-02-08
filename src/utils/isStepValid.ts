@@ -1,5 +1,5 @@
 export function isStepValid(step: number, historyLength: number): boolean {
-  if (typeof step !== "number") {
+  if (typeof step !== 'number') {
     console.error(
       `Please only pass a number to this function! Received '${step}', type: ${typeof step}.`
     );

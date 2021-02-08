@@ -2,7 +2,7 @@
 
 function isImmutable(value: unknown): boolean {
   return (
-    typeof value !== "object" || value === null || typeof value === "undefined"
+    typeof value !== 'object' || value === null || typeof value === 'undefined'
   );
 }
 
@@ -90,6 +90,6 @@ export function getValueAtPath(obj: any, path: string[] = []) {
       return prev;
     }, obj);
   } catch (err) {
-    return "(Unable to retrieve value from path)";
+    return '(Unable to retrieve value from path)';
   }
 }

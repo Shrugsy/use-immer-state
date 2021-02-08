@@ -1,5 +1,5 @@
 const originalConsoleError = console.error;
-const mockedConsoleError = jest.spyOn(console, "error");
+const mockedConsoleError = jest.spyOn(console, 'error');
 
 /**
  * Allows for muting & unmuting console errors within tests on command.

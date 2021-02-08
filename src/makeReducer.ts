@@ -1,5 +1,5 @@
-import produce, { Draft } from "immer";
-import { isStepValid } from "./utils";
+import produce, { Draft } from 'immer';
+import { isStepValid } from './utils';
 
 export type ReducerState<S> = {
   history: ReadonlyArray<S>;
@@ -11,25 +11,25 @@ export type ReducerState<S> = {
 export function makeReducer<S>(initialState: ReducerState<S>) {
   return function reducer(state: ReducerState<S>, action: AllActions<S>) {
     switch (action.type) {
-      case "state/setState": {
+      case 'state/setState': {
         return setStateReducer(state, action);
       }
-      case "state/goTo": {
+      case 'state/goTo': {
         return goToReducer(state, action);
       }
-      case "state/goBack": {
+      case 'state/goBack': {
         return goBackReducer(state);
       }
-      case "state/goForward": {
+      case 'state/goForward': {
         return goForwardReducer(state);
       }
-      case "state/saveCheckpoint": {
+      case 'state/saveCheckpoint': {
         return saveCheckpointReducer(state);
       }
-      case "state/restoreCheckpoint": {
+      case 'state/restoreCheckpoint': {
         return restoreCheckpointReducer(state);
       }
-      case "state/reset": {
+      case 'state/reset': {
         return initialState;
       }
       default: {
@@ -43,7 +43,7 @@ export function makeReducer<S>(initialState: ReducerState<S>) {
 function setStateReducer<S>(state: ReducerState<S>, action: SetStateAction<S>) {
   let nextStatePiece: S;
   const newHistory = state.history.slice(0, state.stepNum + 1);
-  if (typeof action.payload === "function") {
+  if (typeof action.payload === 'function') {
     const updater = action.payload as (
       draftState: Draft<S>
     ) => Draft<S> | void | undefined;
@@ -107,29 +107,29 @@ function restoreCheckpointReducer<S>(state: ReducerState<S>) {
 }
 
 type SetStateAction<S> = {
-  type: "state/setState";
+  type: 'state/setState';
   payload: S | ((draftState: Draft<S>) => Draft<S> | void | undefined);
 };
 
 type GoToAction = {
-  type: "state/goTo";
+  type: 'state/goTo';
   payload: number;
 };
 
 type GoBackAction = {
-  type: "state/goBack";
+  type: 'state/goBack';
 };
 type GoForwardAction = {
-  type: "state/goForward";
+  type: 'state/goForward';
 };
 type SaveCheckpointAction = {
-  type: "state/saveCheckpoint";
+  type: 'state/saveCheckpoint';
 };
 type RestoreCheckpointAction = {
-  type: "state/restoreCheckpoint";
+  type: 'state/restoreCheckpoint';
 };
 type ResetAction = {
-  type: "state/reset";
+  type: 'state/reset';
 };
 
 type AllActions<S> =

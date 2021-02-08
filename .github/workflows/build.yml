@@ -19,6 +19,8 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: 📦 Install packages
         run: npm install
+      - name: 🥽 Run tsc
+        run: npm run test-types
       - name: ⚠️ Run tests
         run: npm run test
       - name: 📰 Upload coverage

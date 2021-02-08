@@ -1,8 +1,13 @@
-import * as React from "react";
-import { Draft } from "immer";
-import { useTrackMutations } from "./utils";
-import { makeReducer, ReducerState } from "./makeReducer";
-export { setAutoFreeze } from "immer";
+import * as React from 'react';
+import { Draft } from 'immer';
+import { useTrackMutations } from './utils';
+import { makeReducer, ReducerState } from './makeReducer';
+export { setAutoFreeze } from 'immer';
+
+export type InitialState<S> = S | (() => S);
+export type Updates<S> =
+  | S
+  | ((draftState: Draft<S>) => Draft<S> | void | undefined);
 
 /**
  * Hook similar to useState, but uses immer internally to ensure immutable updates.
@@ -18,7 +23,7 @@ export { setAutoFreeze } from "immer";
  * https://github.com/Shrugsy/use-immer-state#readme
  * @param initialState - initial state, or lazy function to return initial state
  */
-export function useImmerState<S>(initialState: S | (() => S)) {
+export function useImmerState<S>(initialState: InitialState<S>) {
   // initial state placed in a ref (and never changed)
   // so we can use it without lying to dependency arrays
   const initialStateRef = React.useRef(initialState);
@@ -31,7 +36,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
     let initialStatePiece = passedInInitialState;
 
     // handle lazy initial state if applicable
-    if (typeof passedInInitialState === "function") {
+    if (typeof passedInInitialState === 'function') {
       const lazyInitialState = passedInInitialState as () => S;
       initialStatePiece = lazyInitialState();
     } else {
@@ -64,12 +69,12 @@ export function useImmerState<S>(initialState: S | (() => S)) {
   /*=============================/
   /      Mutation tracking       /
   /=============================*/
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production') {
     // Yes we broke the rule, but kept the spirit.
     // The number of hooks won't change between renders,
     // because the environment won't change between renders.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useTrackMutations(state.history, "State History");
+    useTrackMutations(state.history, 'State History');
   }
 
   /*=============================/
@@ -83,11 +88,9 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        * Using functional notation allows for writing draft updates 'mutably'
        * to produce the next immutable state.
        */
-      setState(
-        updates: S | ((draftState: Draft<S>) => Draft<S> | void | undefined)
-      ) {
+      setState(updates: Updates<S>) {
         dispatchAction({
-          type: "state/setState",
+          type: 'state/setState',
           payload: updates,
         });
       },
@@ -96,7 +99,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        */
       goTo(step: number) {
         dispatchAction({
-          type: "state/goTo",
+          type: 'state/goTo',
           payload: step,
         });
       },
@@ -105,7 +108,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        */
       goBack() {
         dispatchAction({
-          type: "state/goBack",
+          type: 'state/goBack',
         });
       },
       /**
@@ -113,7 +116,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        */
       goForward() {
         dispatchAction({
-          type: "state/goForward",
+          type: 'state/goForward',
         });
       },
       /**
@@ -121,7 +124,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        */
       saveCheckpoint() {
         dispatchAction({
-          type: "state/saveCheckpoint",
+          type: 'state/saveCheckpoint',
         });
       },
       /**
@@ -130,7 +133,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        */
       restoreCheckpoint() {
         dispatchAction({
-          type: "state/restoreCheckpoint",
+          type: 'state/restoreCheckpoint',
         });
       },
       /**
@@ -138,7 +141,7 @@ export function useImmerState<S>(initialState: S | (() => S)) {
        */
       reset() {
         dispatchAction({
-          type: "state/reset",
+          type: 'state/reset',
         });
       },
     }),
