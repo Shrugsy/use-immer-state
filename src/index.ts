@@ -44,6 +44,8 @@ export function useImmerState<S>(initialState: InitialState<S>) {
     }
 
     return {
+      currentStateItem: initialStatePiece,
+      isPartOfHistory: true,
       history: [initialStatePiece],
       stepNum: 0,
       checkpoint: 0,
@@ -88,10 +90,10 @@ export function useImmerState<S>(initialState: InitialState<S>) {
        * Using functional notation allows for writing draft updates 'mutably'
        * to produce the next immutable state.
        */
-      setState(updates: Updates<S>) {
+      setState(updates: Updates<S>, includeInHistory = true) {
         dispatchAction({
           type: 'state/setState',
-          payload: updates,
+          payload: { updates, includeInHistory },
         });
       },
       /**
@@ -170,5 +172,5 @@ export function useImmerState<S>(initialState: InitialState<S>) {
     ]
   );
 
-  return [state.history[state.stepNum], handlers.setState, extraApi] as const;
+  return [state.currentStateItem, handlers.setState, extraApi] as const;
 }

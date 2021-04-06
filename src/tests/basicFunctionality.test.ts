@@ -94,7 +94,7 @@ describe('basic functionality', () => {
     /* functional update applied immutably with immer */
     act(() => {
       setState((prev) => {
-        prev[1].value = 'newBar';
+        prev[1]!.value = 'newBar';
       });
     });
     expect(state).toEqual([

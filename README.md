@@ -108,7 +108,7 @@ const [todos, setTodos] = useImmerState(initialState);
 
 function handleToggleTodo(index, isDone) {
   setTodos((prevTodos) => {
-    prevTodos[index].done = isDone;
+    if (prevTodos[index]) prevTodos[index].done = isDone;
   });
 ```
 
@@ -142,7 +142,14 @@ const [state, setState, extraAPI] = useImmerState(initialState);
 
 > _Note that you can name the value anything you like, or de-structure the values out directly._
 
-`extraAPI` is an object that contains the following values:
+- `state` is the current state, similar to what you would receive from `useState`.  
+
+- `setState` is the function to use when updating state, similar to what you would receive from `useState`.  
+Key differences:
+  - When providing a callback updater, updates can be written `mutably`, and are applied `immutable` behind the scenes
+  - It accepts an optional second boolean argument to dictate whether that state update should contribute to the state 'history' object (defaults true).
+
+- `extraAPI` is an object that contains the following values:
 
 > _Note: For the purposes of the table below, `S` refers to the type of `initialState`._
 

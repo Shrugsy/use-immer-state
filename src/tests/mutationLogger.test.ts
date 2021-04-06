@@ -13,7 +13,7 @@ describe('mutation logger', () => {
     const { rerender } = renderHook(() => useImmerState(initialState));
 
     // first render
-    initialState[0].value = 'mutatedFoo';
+    initialState[0]!.value = 'mutatedFoo';
 
     // silence the expected errors
     mockConsoleError.mute();
