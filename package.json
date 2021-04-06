@@ -1,6 +1,6 @@
 {
   "name": "@shrugsy/use-immer-state",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "description": "Use immutable state with inbuilt time travel. Super-charged use-state with immer capabilities.",
   "source": "src/index.ts",
   "main": "dist/index.js",
@@ -28,6 +28,7 @@
     "react",
     "hook",
     "hooks",
+    "state",
     "useState",
     "use-state",
     "immer",

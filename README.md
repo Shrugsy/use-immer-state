@@ -15,6 +15,7 @@ A React hook that provides a supercharged version of the `useState` hook. Allows
 1. [Features](#Features)
 1. [Usage](#Usage)
 1. [Mutation Detection](#Mutation-Detection)
+1. [Re-exports](#Re-exports)
 
 ## Installation
 
@@ -186,6 +187,20 @@ Note:
 
 > By default, immer freezes the state recursively after it has been used. This means that attempted mutations will not have an effect, but will not reliably be detected and throw an error for every setup/browser when the attempt is made.  
 >  What this means is that the mutation may only be detected in between the first and second state.  
->  This library re-exports `setAutoFreeze` from `immer` which can help narrow down a pesky mutation, as calling `setAutoFreeze(false)` will prevent immer freezing the state, and allow the mutation detection from this library to reliably detect uncontrolled mutations occurring to a serializable state value.
+>  This library re-exports `setAutoFreeze` from `immer` which can help narrow down invalid mutation attempts, as calling `setAutoFreeze(false)` will prevent immer freezing the state, and allow the mutation detection from this library to reliably detect uncontrolled mutations occurring to a serializable state value.
+
+**[⬆ back to top](#table-of-contents)**
+
+## Re-exports
+The following items are re-exported from other libraries for ease of use:
+
+- [setAutoFreeze](https://immerjs.github.io/immer/freezing/) - Enables / disables automatic freezing of the trees produces. By default enabled.
+
+- [original](https://immerjs.github.io/immer/original/) - Given a draft object (doesn't have to be a tree root), returns the original object at the same path in the original state tree, if present
+
+- castDraft - Converts any immutable type to its mutable counterpart. This is just a cast and doesn't actually do anything.
+
+See the following links for more information on the immer API:
+https://immerjs.github.io/immer/api/
 
 **[⬆ back to top](#table-of-contents)**

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Draft } from 'immer';
 import { useTrackMutations } from './utils';
 import { makeReducer, ReducerState } from './makeReducer';
-export { setAutoFreeze } from 'immer';
+export { setAutoFreeze, original, castDraft } from 'immer';
 
 export type InitialState<S> = S | (() => S);
 export type Updates<S> =

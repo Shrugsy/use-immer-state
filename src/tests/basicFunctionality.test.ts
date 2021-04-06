@@ -147,4 +147,106 @@ describe('basic functionality', () => {
       ],
     ]);
   });
+
+  test('handles setting same state', () => {
+    // [ACTION] - render hook with a wrapper to monitor num renders
+    let numRenders = 0;
+    function useRenderCountingWrapper() {
+      const result = useImmerState({ foo: 'fooVal' });
+      numRenders++;
+      return result;
+    }
+    const { result } = renderHook(() => useRenderCountingWrapper());
+
+    // first render
+    // [ASSERT] - should have correct initial values, with one render
+    let [state, setState, { history }] = result.current;
+    const stateFirstRender = state;
+    expect(state).toEqual({ foo: 'fooVal' });
+    expect(history).toEqual([{ foo: 'fooVal' }]);
+    expect(numRenders).toEqual(1);
+
+    // [ACTION] - set state to equal the same value
+    act(() => {
+      setState(state);
+    });
+
+    // [ASSERT] - should not re-render, and should not change values
+    // should not have contributed to history
+    [state, setState, { history }] = result.current;
+    // should be referentially equal
+    expect(state).toBe(stateFirstRender);
+    expect(numRenders).toEqual(1);
+    expect(state).toEqual({ foo: 'fooVal' });
+    expect(history).toEqual([{ foo: 'fooVal' }]);
+
+    // [ACTION] - set state to a new value
+    act(() => {
+      setState((prev) => ({
+        ...prev,
+      }));
+    });
+
+    // [ASSERT] - should have re-rendered, and extended history
+    [state, setState, { history }] = result.current;
+    // should not be referentially equal
+    const stateSecondRender = state;
+    expect(state).not.toBe(stateFirstRender);
+    expect(numRenders).toEqual(2);
+    expect(state).toEqual({ foo: 'fooVal' });
+    expect(history).toEqual([{ foo: 'fooVal' }, { foo: 'fooVal' }]);
+
+    // [ACTION] - attempt to set new state using functional update without changing anything
+    act(() => {
+      setState((prev) => {
+        return prev;
+      });
+    });
+
+    // [ASSERT] - should not change values
+    // should not have contributed to history
+    // WILL re-render once
+    [state, setState, { history }] = result.current;
+    // should be referentially equal
+    expect(state).toBe(stateSecondRender);
+    expect(numRenders).toEqual(3);
+    expect(state).toEqual({ foo: 'fooVal' });
+    expect(history).toEqual([{ foo: 'fooVal' }, { foo: 'fooVal' }]);
+
+    // [ACTION] - attempt to set new state using functional update without changing anything
+    act(() => {
+      setState((prev) => {
+        return prev;
+      });
+    });
+
+    // [ASSERT] - should not change values
+    // should not have contributed to history
+    // should NOT re-render since the last attempt didn't change state either
+    [state, setState, { history }] = result.current;
+    // should be referentially equal
+    expect(state).toBe(stateSecondRender);
+    expect(numRenders).toEqual(3);
+    expect(state).toEqual({ foo: 'fooVal' });
+    expect(history).toEqual([{ foo: 'fooVal' }, { foo: 'fooVal' }]);
+
+    // [ACTION] - change state
+    act(() => {
+      setState((prev) => {
+        prev.foo = 'newFooVal';
+      });
+    });
+
+    // [ASSERT] - should change values, history & re-render
+    [state, setState, { history }] = result.current;
+    // should be referentially equal
+    expect(state).not.toBe(stateSecondRender);
+    expect(numRenders).toEqual(4);
+    expect(state).toEqual({ foo: 'newFooVal' });
+    expect(history).toEqual([
+      { foo: 'fooVal' },
+      { foo: 'fooVal' },
+      { foo: 'newFooVal' },
+    ]);
+  });
 });

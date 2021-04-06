@@ -91,6 +91,10 @@ function setStateReducer<S>(
     nextStatePiece = updates;
   }
 
+  if (nextStatePiece === state.currentStateItem) {
+    return state;
+  }
+
   // chop off any 'future' history if applicable
 
   let choppedHistory: ReadonlyArray<S>;
