@@ -1558,4 +1558,169 @@ describe('extra API', () => {
       ],
     ]);
   });
+
+  test('provides "isFirstStep" and "isLastStep" convenience booleans', () => {
+    const { result } = renderHook(() => useImmerState(0));
+
+    // [ASSERT] - should have the expected starting details
+    // first render
+    let [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+
+    expect(state).toEqual(0);
+    expect(history).toEqual([0]);
+    expect(stepNum).toEqual(0);
+    expect(isFirstStep).toEqual(true);
+    expect(isLastStep).toEqual(true);
+
+    // [ACTION] set state once
+    act(() => {
+      setState((prev) => prev + 1);
+    });
+
+    // [ASSERT] - should have incremented by 1, history should show new entry
+    // should no longer be first step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+
+    expect(state).toEqual(1);
+    expect(history).toEqual([0, 1]);
+    expect(stepNum).toEqual(1);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(true);
+
+    // [ACTION] - set state 3 times
+    act(() => {
+      setState((prev) => prev + 2);
+      setState((prev) => prev + 4);
+      setState((prev) => prev + 8);
+    });
+
+    // [ASSERT] - should have incremented by 14, history should show new entries
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+
+    expect(state).toEqual(15);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(4);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(true);
+
+    // [ACTION] - go back one
+    act(() => {
+      goBack();
+    });
+
+    // [ASSERT] - details should update accordingly
+    // state & step should move, should not be last step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+    expect(state).toEqual(7);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(3);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(false);
+
+    // [ACTION] - go forward one
+    act(() => {
+      goForward();
+    });
+
+    // [ASSERT] - details should update accordingly
+    // state & step should move, should be last step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+    expect(state).toEqual(15);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(4);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(true);
+
+    // [ACTION] - go back one
+    act(() => {
+      goBack();
+    });
+
+    // [ASSERT] - details should update accordingly
+    // state & step should move, should not be last step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+    expect(state).toEqual(7);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(3);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(false);
+
+    // [ACTION] - go back one
+    act(() => {
+      goBack();
+    });
+
+    // [ASSERT] - details should update accordingly
+    // state & step should move, should not be last step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+    expect(state).toEqual(3);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(2);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(false);
+
+    // [ACTION] - go back one
+    act(() => {
+      goBack();
+    });
+
+    // [ASSERT] - details should update accordingly
+    // state & step should move, should not be last step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+    expect(state).toEqual(1);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(1);
+    expect(isFirstStep).toEqual(false);
+    expect(isLastStep).toEqual(false);
+
+    // [ACTION] - go back one
+    act(() => {
+      goBack();
+    });
+
+    // [ASSERT] - details should update accordingly
+    // state & step should move, should not be last step
+    [
+      state,
+      setState,
+      { history, stepNum, isFirstStep, isLastStep, goBack, goForward },
+    ] = result.current;
+    expect(state).toEqual(0);
+    expect(history).toEqual([0, 1, 3, 7, 15]);
+    expect(stepNum).toEqual(0);
+    expect(isFirstStep).toEqual(true);
+    expect(isLastStep).toEqual(false);
+  });
 });

@@ -31,6 +31,37 @@ describe('basic functionality', () => {
     expect(state).toEqual('foobar');
   });
 
+  test('accepts no initial state argument', () => {
+    const { result } = renderHook(() => useImmerState());
+
+    const [state] = result.current;
+
+    expectType<undefined>(state);
+  });
+
+  test('accepts no initial state argument, with user defined type', () => {
+    const { result } = renderHook(() => useImmerState<string>());
+
+    let [state, setState, { history }] = result.current;
+
+    // [ASSERT] - should accept string | undefined
+    expectType<string | undefined>(state);
+    expectType<readonly (string | undefined)[]>(history);
+    // [ASSERT] - state should be undefined, and in history array
+    expect(state).toBeUndefined();
+    expect(history).toEqual([undefined]);
+
+    // [ACTION] - call setState with a string
+    act(() => {
+      setState('foo');
+    });
+
+    // [ASSERT] - state should update to the given string, and be appended on history
+    [state, setState, { history }] = result.current;
+    expect(state).toEqual('foo');
+    expect(history).toEqual([undefined, 'foo']);
+  });
+
   test('can accept a lazy initializer for initial state', () => {
     const { result } = renderHook(() => useImmerState(() => 'initial'));
 

@@ -16,6 +16,7 @@ A React hook that provides a supercharged version of the `useState` hook. Allows
 1. [Usage](#Usage)
 1. [Mutation Detection](#Mutation-Detection)
 1. [Re-exports](#Re-exports)
+1. [Typescript Exports](#Typescript-Exports)
 
 ## Installation
 
@@ -154,18 +155,20 @@ Key differences:
 
 > _Note: For the purposes of the table below, `S` refers to the type of `initialState`._
 
-| Name              | Type                   | Description                                                                                                                                                                                                                                                                                         |
-| ----------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| history           | ReadOnlyArray\<S\>     | `(default [initialState])` An array of the state history                                                                                                                                                                                                                                            |
-| stepNum           | number                 | `(default 0)` The current step (index) within the state history                                                                                                                                                                                                                                     |
-| goTo              | (step: number) => void | Change the current state to a particular step (index) within the state history                                                                                                                                                                                                                      |
-| goBack            | () => void             | Go to the previous step (index) within the state history                                                                                                                                                                                                                                            |
-| goForward         | () => void             | Go to the next step (index) within the state history                                                                                                                                                                                                                                                |
-| saveCheckpoint    | () => void             | Saves the current step (index) within the state history to a 'checkpoint' that can be restored later                                                                                                                                                                                                |
-| restoreCheckpoint | () => void             | Restores the state to the saved 'checkpoint' if it is still valid.                                                                                                                                                                                                                                  |
-| checkpoint        | number                 | `(default 0)` The step (index) within the state history for the saved checkpoint                                                                                                                                                                                                                    |
+| Name              | Type                   | Description                                                                            |
+| ----------------- | ---------------------- | -------------------------------------------------------------------------------------- |
+| history           | ReadOnlyArray\<S\>     | `(default [initialState])` An array of the state history                               |
+| stepNum           | number                 | `(default 0)` The current step (index) within the state history                        |
+| isFirstStep       | boolean                | Whether the current step is the first step (i.e. if stepNum === 0)                     |
+| isLastStep        | boolean                | Whether the current step is the last step (i.e. if stepNum === history.length - 1)     |
+| goTo              | (step: number) => void | Change the current state to a particular step (index) within the state history         |
+| goBack            | () => void             | Go to the previous step (index) within the state history                               |
+| goForward         | () => void             | Go to the next step (index) within the state history                                   |
+| saveCheckpoint    | () => void             | Saves the current step (index) within the state history to a 'checkpoint' that can be restored later   |
+| restoreCheckpoint | () => void             | Restores the state to the saved 'checkpoint' if it is still valid                      |
+| checkpoint        | number                 | `(default 0)` The step (index) within the state history for the saved checkpoint       |
 | isCheckpointValid | boolean                | `(default true)` Indicates whether the saved checkpoint is valid and accessible to restore. A checkpoint will be invalidated if the history gets overwritten such that it overwrites the saved checkpoint. History is overwritten when writing new state while at a step number besides the latest. |
-| reset             | () => void             | Resets state, history and checkpoint back to the initial state.                                                                                                                                                                                                                                     |
+| reset             | () => void             | Resets state, history and checkpoint back to the initial state.                        |
 
 Please try the [codesandbox demo](https://codesandbox.io/s/shrugsyuse-immer-state-example-tjptk?file=/src/App.tsx) to see an example of the API in action.
 
@@ -204,3 +207,62 @@ See the following links for more information on the immer API:
 https://immerjs.github.io/immer/api/
 
 **[⬆ back to top](#table-of-contents)**
+
+## Typescript exports
+The following type definitions are used by this library internally and are exported for typescript users to use as required.
+
+```ts
+/** Initial state provided to the hook */
+export declare type InitialState<S> = S | (() => S);
+```
+```ts
+/** New state, or a state updater callback provided to a `setState` call */
+export declare type Updates<S> = S | ((draftState: Draft<S>) => Draft<S> | void | undefined);
+```
+```ts
+/** Function used to update the state */
+export declare type SetState<S> = (updates: Updates<S>, includeInHistory?: boolean) => void;
+```
+```ts
+/** Extra API used for time travel features */
+export declare type ExtraAPI<S> = {
+    history: readonly S[];
+    stepNum: number;
+    isFirstStep: boolean;
+    isLastStep: boolean;
+    goTo: (step: number) => void;
+    goBack: () => void;
+    goForward: () => void;
+    saveCheckpoint: () => void;
+    restoreCheckpoint: () => void;
+    checkpoint: number;
+    isCheckpointValid: boolean;
+    reset: () => void;
+};
+```
+```ts
+/** Return value of the hook */
+export declare type UseImmerStateReturn<S> = readonly [S, SetState<S>, ExtraAPI<S>];
+```
+```ts
+/**
+ * Hook similar to useState, but uses immer internally to ensure immutable updates.
+ * Allows using the setter function to be written 'mutably',
+ * while letting immer take care of applying the immutable updates.
+ *
+ * Provides time travel support including `history`, `checkpoints`, `goTo`,
+ * and `reset` functionality.
+ *
+ * If not in production mode, checks for mutations between renders and will
+ * throw an error if detected.
+ *
+ * https://github.com/Shrugsy/use-immer-state#readme
+ * @param initialState - initial state, or lazy function to return initial state
+ * @returns [state, setState, extraAPI]:
+ * - state - the current state
+ * - setState- A function to update the state
+ * - extraAPI - An object containing details and methods related to inbuilt time travel features
+ */
+export declare function useImmerState<S = undefined>(): UseImmerStateReturn<S | undefined>;
+export declare function useImmerState<S>(initialState: InitialState<S>): UseImmerStateReturn<S>;
+```
