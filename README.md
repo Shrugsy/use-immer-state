@@ -11,12 +11,12 @@ A React hook that provides a supercharged version of the `useState` hook. Allows
 
 ## Table of Contents
 
-1. [Installation](#Installation)
-1. [Features](#Features)
-1. [Usage](#Usage)
-1. [Mutation Detection](#Mutation-Detection)
-1. [Re-exports](#Re-exports)
-1. [Typescript Exports](#Typescript-Exports)
+1. [Installation](#installation)
+1. [Features](#features)
+1. [Usage](#usage)
+1. [Mutation Detection](#mutation-detection)
+1. [Re-exports](#re-exports)
+1. [Typescript Exports](#typescript-exports)
 
 ## Installation
 
