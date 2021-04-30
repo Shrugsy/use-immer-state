@@ -199,9 +199,13 @@ The following items are re-exported from other libraries for ease of use:
 
 - [setAutoFreeze](https://immerjs.github.io/immer/freezing/) - Enables / disables automatic freezing of the trees produces. By default enabled.
 
+- [current](https://immerjs.github.io/immer/current/) - Given a draft object (doesn't have to be a tree root), takes a snapshot of the current state of the draft
+
 - [original](https://immerjs.github.io/immer/original/) - Given a draft object (doesn't have to be a tree root), returns the original object at the same path in the original state tree, if present
 
-- castDraft - Converts any immutable type to its mutable counterpart. This is just a cast and doesn't actually do anything.
+- castDraft - Converts any immutable type to its mutable counterpart. This is just a cast and doesn't actually do anything
+
+- Draft - Exposed TypeScript type to convert an immutable type to a mutable type
 
 See the following links for more information on the immer API:
 https://immerjs.github.io/immer/api/

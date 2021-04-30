@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Draft } from 'immer';
 import { useTrackMutations } from './utils';
 import { makeReducer, ReducerState } from './makeReducer';
-export { setAutoFreeze, original, castDraft, Draft } from 'immer';
+export { setAutoFreeze, original, current, castDraft, Draft } from 'immer';
 
 /** Initial state provided to the hook */
 export type InitialState<S> = S | (() => S);
